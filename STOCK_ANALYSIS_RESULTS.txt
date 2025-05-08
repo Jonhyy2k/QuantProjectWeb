@@ -1,0 +1,1387 @@
+=== ANALYSIS FOR SPG ===
+Company: Simon Property Group Inc
+Industry: REAL ESTATE INVESTMENT TRUSTS
+Sector: REAL ESTATE & CONSTRUCTION
+Current Price: $153.18
+Change: -17.23 (-10.1109%)
+Sigma Score: 0.23744
+Recommendation: SELL - Mixed signals in high volatility environment - position sizing caution advised | High historical drawdown risk (-212.2%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.333
+Reversion Score: 0.784
+Balance Factor: 0.625
+
+--- TECHNICAL INDICATORS ---
+RSI: 41.08
+MACD: -3.37791
+SMA Trend: -0.05504
+Distance from SMA200: -0.090
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 6.5 days (Fast)
+Mean Reversion Beta: -0.101
+Volatility Regime: Rising
+Volatility Term Structure: 1.768
+Volatility Persistence: 0.123
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -212.18%
+Kelly Criterion: 0.031
+Sharpe Ratio: 0.206
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.127
+DQN Recommendation: 0.408
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $64.25B
+P/E Ratio: 23.47
+PEG Ratio: 4.823
+P/B Ratio: 18.72
+EV/EBITDA: 15.49
+Profit Margin: 0.40%
+Operating Margin: 0.53%
+ROA: 0.06%
+ROE: 0.75%
+Revenue TTM: $5.96B
+Gross Profit TTM: $4.92B
+EPS TTM: 7.26
+Quarterly Earnings Growth: -0.11%
+Quarterly Revenue Growth: 0.04%
+Analyst Target: $190.89
+Beta: 1.802
+52-Week High: $187.80
+52-Week Low: $132.53
+50-Day MA: $174.79
+200-Day MA: $168.36
+Dividend Yield: 0.05%
+Dividend Per Share: $8.10
+
+==================================================
+
+=== ANALYSIS FOR UBER ===
+Company: Uber Technologies Inc
+Industry: SERVICES-BUSINESS SERVICES, NEC
+Sector: TRADE & SERVICES
+Current Price: $64.62
+Change: -5.23 (-7.4875%)
+Sigma Score: 0.18117
+Recommendation: STRONG SELL - Continued weakness with -15.3% monthly loss in high volatility regime | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.340
+Reversion Score: 0.698
+Balance Factor: 0.525
+
+--- TECHNICAL INDICATORS ---
+RSI: 32.28
+MACD: -0.94519
+SMA Trend: -0.01244
+Distance from SMA200: -0.093
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.001
+Volatility Regime: Stable
+Volatility Term Structure: 1.030
+Volatility Persistence: 0.108
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -inf%
+Kelly Criterion: 0.029
+Sharpe Ratio: 0.142
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.100
+DQN Recommendation: 0.521
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $146.07B
+P/E Ratio: 15.32
+PEG Ratio: 44.29
+P/B Ratio: 7.23
+EV/EBITDA: 29.7
+Profit Margin: 0.22%
+Operating Margin: 0.06%
+ROA: 0.04%
+ROE: 0.56%
+Revenue TTM: $43.98B
+Gross Profit TTM: $14.60B
+EPS TTM: 4.56
+Quarterly Earnings Growth: 3.84%
+Quarterly Revenue Growth: 0.20%
+Analyst Target: $89.26
+Beta: 1.366
+52-Week High: $87.00
+52-Week Low: $54.84
+50-Day MA: $73.60
+200-Day MA: $71.26
+Dividend Yield: None
+Dividend Per Share: None
+
+==================================================
+
+=== ANALYSIS FOR SONY ===
+Company: Sony Group Corp
+Industry: HOUSEHOLD AUDIO & VIDEO EQUIPMENT
+Sector: MANUFACTURING
+Current Price: $21.82
+Change: -1.56 (-6.6724%)
+Sigma Score: 0.15666
+Recommendation: STRONG SELL - Mixed signals requiring monitoring with log-based half-life of 0.0 days | High historical drawdown risk (-192.8%) | Poor risk-adjusted returns (Sharpe=-0.16)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.469
+Reversion Score: 0.758
+Balance Factor: 0.600
+
+--- TECHNICAL INDICATORS ---
+RSI: 26.53
+MACD: 0.00035
+SMA Trend: 0.02489
+Distance from SMA200: -0.549
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.003
+Volatility Regime: Rising
+Volatility Term Structure: 1.365
+Volatility Persistence: -0.004
+Market Regime: Medium Volatility 1
+
+--- RISK METRICS ---
+Maximum Drawdown: -192.79%
+Kelly Criterion: -0.001
+Sharpe Ratio: -0.158
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.500
+DQN Recommendation: 0.579
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $137.75B
+P/E Ratio: 17.32
+PEG Ratio: 3.81
+P/B Ratio: 2.375
+EV/EBITDA: 7.9
+Profit Margin: 0.08%
+Operating Margin: 0.11%
+ROA: 0.03%
+ROE: 0.14%
+Revenue TTM: $13807.79B
+Gross Profit TTM: $3687.15B
+EPS TTM: 1.26
+Quarterly Earnings Growth: 0.05%
+Quarterly Revenue Growth: 0.18%
+Analyst Target: $28.76
+Beta: 0.788
+52-Week High: $25.78
+52-Week Low: $14.97
+50-Day MA: $23.83
+200-Day MA: $20.13
+Dividend Yield: 0.01%
+Dividend Per Share: $19.00
+
+==================================================
+
+=== ANALYSIS FOR SONY ===
+Company: Sony Group Corp
+Industry: HOUSEHOLD AUDIO & VIDEO EQUIPMENT
+Sector: MANUFACTURING
+Current Price: $21.82
+Change: -1.56 (-6.6724%)
+Sigma Score: 0.14609
+Recommendation: STRONG SELL - Mixed signals requiring monitoring with log-based half-life of 0.0 days | High historical drawdown risk (-192.8%) | Poor risk-adjusted returns (Sharpe=-0.16)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.435
+Reversion Score: 0.758
+Balance Factor: 0.600
+
+--- TECHNICAL INDICATORS ---
+RSI: 26.53
+MACD: 0.00035
+SMA Trend: 0.02489
+Distance from SMA200: -0.549
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.003
+Volatility Regime: Rising
+Volatility Term Structure: 1.365
+Volatility Persistence: -0.004
+Market Regime: Medium Volatility 1
+
+--- RISK METRICS ---
+Maximum Drawdown: -192.79%
+Kelly Criterion: -0.001
+Sharpe Ratio: -0.158
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.348
+DQN Recommendation: 0.526
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $137.75B
+P/E Ratio: 17.32
+PEG Ratio: 3.81
+P/B Ratio: 2.375
+EV/EBITDA: 7.9
+Profit Margin: 0.08%
+Operating Margin: 0.11%
+ROA: 0.03%
+ROE: 0.14%
+Revenue TTM: $13807.79B
+Gross Profit TTM: $3687.15B
+EPS TTM: 1.26
+Quarterly Earnings Growth: 0.05%
+Quarterly Revenue Growth: 0.18%
+Analyst Target: $28.76
+Beta: 0.788
+52-Week High: $25.78
+52-Week Low: $14.97
+50-Day MA: $23.83
+200-Day MA: $20.13
+Dividend Yield: 0.01%
+Dividend Per Share: $19.00
+
+==================================================
+
+=== ANALYSIS FOR SPY ===
+Current Price: $505.28
+Change: -31.42 (-5.8543%)
+Sigma Score: 0.14392
+Recommendation: STRONG SELL - Strong mean-reverting characteristics (Hurst=-0.00, Beta=-0.08) with weak momentum | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.259
+Reversion Score: 0.763
+Balance Factor: 0.750
+
+--- TECHNICAL INDICATORS ---
+RSI: 23.05
+MACD: -11.81027
+SMA Trend: -0.04062
+Distance from SMA200: -0.120
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 8.6 days (Fast)
+Mean Reversion Beta: -0.078
+Volatility Regime: Rising
+Volatility Term Structure: 1.777
+Volatility Persistence: 0.839
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -inf%
+Kelly Criterion: 0.032
+Sharpe Ratio: 0.267
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.100
+DQN Recommendation: 0.367
+
+==================================================
+
+=== ANALYSIS FOR SPY ===
+Current Price: $505.28
+Change: -31.42 (-5.8543%)
+Sigma Score: 0.15228
+Recommendation: STRONG SELL - Strong mean-reverting characteristics (Hurst=-0.00, Beta=-0.08) with weak momentum | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.277
+Reversion Score: 0.763
+Balance Factor: 0.750
+
+--- TECHNICAL INDICATORS ---
+RSI: 23.05
+MACD: -11.81027
+SMA Trend: -0.04062
+Distance from SMA200: -0.120
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 8.6 days (Fast)
+Mean Reversion Beta: -0.078
+Volatility Regime: Rising
+Volatility Term Structure: 1.777
+Volatility Persistence: 0.839
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -422.47%
+Kelly Criterion: 0.032
+Sharpe Ratio: 0.267
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.120
+DQN Recommendation: 0.446
+
+==================================================
+
+=== ANALYSIS FOR AAPL ===
+Company: Apple Inc
+Industry: ELECTRONIC COMPUTERS
+Sector: TECHNOLOGY
+Current Price: $188.38
+Change: -14.81 (-7.2887%)
+Sigma Score: 0.17560
+Recommendation: STRONG SELL - Negative trend with -21.2% monthly loss and limited reversal signals | High historical drawdown risk (-196.9%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.391
+Reversion Score: 0.791
+Balance Factor: 0.550
+
+--- TECHNICAL INDICATORS ---
+RSI: 30.78
+MACD: -6.17877
+SMA Trend: -0.05438
+Distance from SMA200: -0.177
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 34.2 days (Medium)
+Mean Reversion Beta: -0.020
+Volatility Regime: Rising
+Volatility Term Structure: 1.737
+Volatility Persistence: 0.363
+Market Regime: Medium Volatility 1
+
+--- RISK METRICS ---
+Maximum Drawdown: -196.89%
+Kelly Criterion: 0.040
+Sharpe Ratio: 0.054
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.563
+DQN Recommendation: 0.452
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $2829.86B
+P/E Ratio: 29.95
+PEG Ratio: 1.748
+P/B Ratio: 42.39
+EV/EBITDA: 20.92
+Profit Margin: 0.24%
+Operating Margin: 0.34%
+ROA: 0.23%
+ROE: 1.36%
+Revenue TTM: $395.76B
+Gross Profit TTM: $184.10B
+EPS TTM: 6.29
+Quarterly Earnings Growth: 0.10%
+Quarterly Revenue Growth: 0.04%
+Analyst Target: $250.40
+Beta: 1.259
+52-Week High: $259.81
+52-Week Low: $163.31
+50-Day MA: $229.02
+200-Day MA: $229.01
+Dividend Yield: 0.01%
+Dividend Per Share: $0.99
+
+==================================================
+
+=== ANALYSIS FOR JPM ===
+Company: JPMorgan Chase & Co
+Industry: NATIONAL COMMERCIAL BANKS
+Sector: FINANCE
+Current Price: $210.28
+Change: -16.90 (-7.4380%)
+Sigma Score: 0.11138
+Recommendation: STRONG SELL - Mixed signals in high volatility environment - position sizing caution advised | High historical drawdown risk (-961.5%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.313
+Reversion Score: 0.775
+Balance Factor: 0.625
+
+--- TECHNICAL INDICATORS ---
+RSI: 32.47
+MACD: -5.40663
+SMA Trend: -0.06673
+Distance from SMA200: -0.090
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 9.0 days (Fast)
+Mean Reversion Beta: -0.074
+Volatility Regime: Rising
+Volatility Term Structure: 1.473
+Volatility Persistence: 0.231
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -961.54%
+Kelly Criterion: 0.022
+Sharpe Ratio: 0.096
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.207
+DQN Recommendation: 0.426
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $587.97B
+P/E Ratio: 10.65
+PEG Ratio: 5.75
+P/B Ratio: 1.811
+EV/EBITDA: -
+Profit Margin: 0.35%
+Operating Margin: 0.43%
+ROA: 0.01%
+ROE: 0.17%
+Revenue TTM: $166.77B
+Gross Profit TTM: $166.77B
+EPS TTM: 19.75
+Quarterly Earnings Growth: 0.58%
+Quarterly Revenue Growth: 0.13%
+Analyst Target: $262.50
+Beta: 1.005
+52-Week High: $278.53
+52-Week Low: $175.14
+50-Day MA: $254.51
+200-Day MA: $231.00
+Dividend Yield: 0.03%
+Dividend Per Share: $4.80
+
+==================================================
+
+=== ANALYSIS FOR SONY ===
+Company: Sony Group Corp
+Industry: HOUSEHOLD AUDIO & VIDEO EQUIPMENT
+Sector: MANUFACTURING
+Current Price: $21.82
+Change: -1.56 (-6.6724%)
+Sigma Score: 0.12663
+Recommendation: STRONG SELL - Mixed signals requiring monitoring with log-based half-life of 0.0 days | High historical drawdown risk (-192.8%) | Poor risk-adjusted returns (Sharpe=-0.16)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.371
+Reversion Score: 0.758
+Balance Factor: 0.600
+
+--- TECHNICAL INDICATORS ---
+RSI: 26.53
+MACD: 0.00035
+SMA Trend: 0.02489
+Distance from SMA200: -0.549
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.003
+Volatility Regime: Rising
+Volatility Term Structure: 1.365
+Volatility Persistence: -0.004
+Market Regime: Medium Volatility 1
+
+--- RISK METRICS ---
+Maximum Drawdown: -192.79%
+Kelly Criterion: -0.001
+Sharpe Ratio: -0.158
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.142
+DQN Recommendation: 0.361
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $137.75B
+P/E Ratio: 17.32
+PEG Ratio: 3.81
+P/B Ratio: 2.375
+EV/EBITDA: 7.9
+Profit Margin: 0.08%
+Operating Margin: 0.11%
+ROA: 0.03%
+ROE: 0.14%
+Revenue TTM: $13807.79B
+Gross Profit TTM: $3687.15B
+EPS TTM: 1.26
+Quarterly Earnings Growth: 0.05%
+Quarterly Revenue Growth: 0.18%
+Analyst Target: $28.76
+Beta: 0.788
+52-Week High: $25.78
+52-Week Low: $14.97
+50-Day MA: $23.83
+200-Day MA: $20.13
+Dividend Yield: 0.01%
+Dividend Per Share: $19.00
+
+==================================================
+
+=== ANALYSIS FOR JPM ===
+Company: JPMorgan Chase & Co
+Industry: NATIONAL COMMERCIAL BANKS
+Sector: FINANCE
+Current Price: $210.28
+Change: -16.90 (-7.4380%)
+Sigma Score: 0.11367
+Recommendation: STRONG SELL - Mixed signals in high volatility environment - position sizing caution advised | High historical drawdown risk (-961.5%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.321
+Reversion Score: 0.775
+Balance Factor: 0.625
+
+--- TECHNICAL INDICATORS ---
+RSI: 32.47
+MACD: -5.40663
+SMA Trend: -0.06673
+Distance from SMA200: -0.090
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 9.0 days (Fast)
+Mean Reversion Beta: -0.074
+Volatility Regime: Rising
+Volatility Term Structure: 1.473
+Volatility Persistence: 0.231
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -961.54%
+Kelly Criterion: 0.022
+Sharpe Ratio: 0.096
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.129
+DQN Recommendation: 0.527
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $587.97B
+P/E Ratio: 10.65
+PEG Ratio: 5.75
+P/B Ratio: 1.811
+EV/EBITDA: -
+Profit Margin: 0.35%
+Operating Margin: 0.43%
+ROA: 0.01%
+ROE: 0.17%
+Revenue TTM: $166.77B
+Gross Profit TTM: $166.77B
+EPS TTM: 19.75
+Quarterly Earnings Growth: 0.58%
+Quarterly Revenue Growth: 0.13%
+Analyst Target: $262.50
+Beta: 1.005
+52-Week High: $278.53
+52-Week Low: $175.14
+50-Day MA: $254.51
+200-Day MA: $231.00
+Dividend Yield: 0.03%
+Dividend Per Share: $4.80
+
+==================================================
+
+=== ANALYSIS FOR HY9H.FRK ===
+Current Price: $106.00
+Change: -11.00 (-9.4017%)
+Sigma Score: 0.07981
+Recommendation: STRONG SELL - Balanced indicators with no clear edge in Stable volatility | High historical drawdown risk (-72.9%) | Negative expectancy (Kelly=-0.51)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.336
+Reversion Score: 0.655
+Balance Factor: 0.600
+
+--- TECHNICAL INDICATORS ---
+RSI: 24.49
+MACD: -3.60005
+SMA Trend: -0.03665
+Distance from SMA200: -0.171
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 6.4 days (Fast)
+Mean Reversion Beta: -0.103
+Volatility Regime: Stable
+Volatility Term Structure: 1.120
+Volatility Persistence: -0.024
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -72.92%
+Kelly Criterion: -0.512
+Sharpe Ratio: 0.223
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.100
+DQN Recommendation: 0.486
+
+==================================================
+
+=== ANALYSIS FOR MRNA ===
+Company: Moderna Inc
+Industry: BIOLOGICAL PRODUCTS, (NO DISGNOSTIC SUBSTANCES)
+Sector: LIFE SCIENCES
+Current Price: $25.11
+Change: -0.62 (-2.4096%)
+Sigma Score: 0.20655
+Recommendation: SELL - Negative trend with -29.5% monthly loss and limited reversal signals | High historical drawdown risk (-2640.0%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.356
+Reversion Score: 0.436
+Balance Factor: 0.525
+
+--- TECHNICAL INDICATORS ---
+RSI: 18.91
+MACD: -2.08284
+SMA Trend: -0.05497
+Distance from SMA200: -0.589
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.000 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.041
+Volatility Regime: Stable
+Volatility Term Structure: 0.811
+Volatility Persistence: 0.021
+Market Regime: Medium Volatility 1
+
+--- RISK METRICS ---
+Maximum Drawdown: -2640.00%
+Kelly Criterion: 0.033
+Sharpe Ratio: 0.066
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.205
+DQN Recommendation: 0.492
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $9.71B
+P/E Ratio: None
+PEG Ratio: 0
+P/B Ratio: 0.891
+EV/EBITDA: 4.641
+Profit Margin: -1.10%
+Operating Margin: -1.29%
+ROA: -0.15%
+ROE: -0.29%
+Revenue TTM: $3.24B
+Gross Profit TTM: $-2771000064.00
+EPS TTM: -9.28
+Quarterly Earnings Growth: -0.85%
+Quarterly Revenue Growth: -0.66%
+Analyst Target: $52.35
+Beta: 2.233
+52-Week High: $170.47
+52-Week Low: $23.76
+50-Day MA: $33.72
+200-Day MA: $61.04
+Dividend Yield: None
+Dividend Per Share: None
+
+==================================================
+
+=== ANALYSIS FOR BNTX ===
+Company: BioNTech SE
+Industry: BIOLOGICAL PRODUCTS, (NO DISGNOSTIC SUBSTANCES)
+Sector: LIFE SCIENCES
+Current Price: $96.52
+Change: 3.40 (3.6512%)
+Sigma Score: 0.22421
+Recommendation: SELL - Balanced indicators with no clear edge in Stable volatility | History of frequent significant drawdowns (20 events, avg depth: -inf%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.440
+Reversion Score: 0.592
+Balance Factor: 0.525
+
+--- TECHNICAL INDICATORS ---
+RSI: 43.55
+MACD: -3.79599
+SMA Trend: -0.10874
+Distance from SMA200: -0.079
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.005 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.018
+Volatility Regime: Stable
+Volatility Term Structure: 1.022
+Volatility Persistence: 0.027
+Market Regime: Medium Volatility 1
+
+--- RISK METRICS ---
+Maximum Drawdown: -85.19%
+Kelly Criterion: 0.072
+Sharpe Ratio: 0.444
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.100
+DQN Recommendation: 0.534
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $23.20B
+P/E Ratio: None
+PEG Ratio: 0.0449
+P/B Ratio: 1.092
+EV/EBITDA: 110.81
+Profit Margin: -0.24%
+Operating Margin: 0.13%
+ROA: -0.04%
+ROE: -0.03%
+Revenue TTM: $2.75B
+Gross Profit TTM: $2.21B
+EPS TTM: -3.03
+Quarterly Earnings Growth: -0.43%
+Quarterly Revenue Growth: -0.20%
+Analyst Target: $144.06
+Beta: 1.08
+52-Week High: $131.49
+52-Week Low: $76.53
+50-Day MA: $105.84
+200-Day MA: $104.84
+Dividend Yield: None
+Dividend Per Share: None
+
+==================================================
+
+=== ANALYSIS FOR VKTX ===
+Company: Viking Therapeutics Inc
+Industry: PHARMACEUTICAL PREPARATIONS
+Sector: LIFE SCIENCES
+Current Price: $22.22
+Change: 0.70 (3.2528%)
+Sigma Score: 0.21778
+Recommendation: SELL - Negative trend with -28.1% monthly loss and limited reversal signals | History of frequent significant drawdowns (17 events, avg depth: -inf%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | Typically long recovery periods (137 days avg) | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.438
+Reversion Score: 0.467
+Balance Factor: 0.483
+
+--- TECHNICAL INDICATORS ---
+RSI: 30.65
+MACD: -2.12090
+SMA Trend: -0.09357
+Distance from SMA200: -0.540
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 11.6 days (Fast)
+Mean Reversion Beta: -0.058
+Volatility Regime: Stable
+Volatility Term Structure: 1.031
+Volatility Persistence: -0.021
+Market Regime: Medium Volatility 1
+
+--- RISK METRICS ---
+Maximum Drawdown: -1185.14%
+Kelly Criterion: 0.029
+Sharpe Ratio: 0.101
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.361
+DQN Recommendation: 0.464
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $2.50B
+P/E Ratio: None
+PEG Ratio: -0.03
+P/B Ratio: 2.834
+EV/EBITDA: -71.64
+Profit Margin: 0.00%
+Operating Margin: 0.00%
+ROA: -0.15%
+ROE: -0.18%
+Revenue TTM: $0.00
+Gross Profit TTM: $0.00
+EPS TTM: -1.01
+Quarterly Earnings Growth: 0.00%
+Quarterly Revenue Growth: 0.00%
+Analyst Target: $95.44
+Beta: 0.831
+52-Week High: $81.86
+52-Week Low: $18.92
+50-Day MA: $28.17
+200-Day MA: $48.28
+Dividend Yield: None
+Dividend Per Share: None
+
+==================================================
+
+=== ANALYSIS FOR DKS ===
+Company: Dick’s Sporting Goods Inc
+Industry: RETAIL-MISCELLANEOUS SHOPPING GOODS STORES
+Sector: TRADE & SERVICES
+Current Price: $185.93
+Change: -4.09 (-2.1524%)
+Sigma Score: 0.25690
+Recommendation: SELL - Mixed signals in high volatility environment - position sizing caution advised | History of frequent significant drawdowns (51 events, avg depth: -15.7%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | Typically long recovery periods (108 days avg) | High historical drawdown risk (-106.2%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.474
+Reversion Score: 0.535
+Balance Factor: 0.550
+
+--- TECHNICAL INDICATORS ---
+RSI: 40.54
+MACD: -7.09154
+SMA Trend: -0.07972
+Distance from SMA200: -0.132
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.000 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.010
+Volatility Regime: Rising
+Volatility Term Structure: 1.817
+Volatility Persistence: 0.019
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -106.15%
+Kelly Criterion: 0.043
+Sharpe Ratio: 0.252
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.285
+DQN Recommendation: 0.629
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $14.85B
+P/E Ratio: 13.22
+PEG Ratio: 2.12
+P/B Ratio: 4.642
+EV/EBITDA: 8.95
+Profit Margin: 0.09%
+Operating Margin: 0.10%
+ROA: 0.09%
+ROE: 0.40%
+Revenue TTM: $13.44B
+Gross Profit TTM: $4.83B
+EPS TTM: 14.06
+Quarterly Earnings Growth: 0.02%
+Quarterly Revenue Growth: 0.01%
+Analyst Target: $231.23
+Beta: 1.346
+52-Week High: $253.13
+52-Week Low: $166.37
+50-Day MA: $212.86
+200-Day MA: $214.31
+Dividend Yield: 0.03%
+Dividend Per Share: $4.40
+
+==================================================
+
+=== ANALYSIS FOR PLTR ===
+Company: Palantir Technologies Inc. Class A Common Stock
+Industry: SERVICES-PREPACKAGED SOFTWARE
+Sector: TECHNOLOGY
+Current Price: $92.62
+Change: 4.07 (4.5963%)
+Sigma Score: 0.24661
+Recommendation: SELL - Balanced indicators with no clear edge in Stable volatility | History of frequent significant drawdowns (19 events, avg depth: -inf%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.480
+Reversion Score: 0.441
+Balance Factor: 0.525
+
+--- TECHNICAL INDICATORS ---
+RSI: 46.48
+MACD: -0.32619
+SMA Trend: -0.06043
+Distance from SMA200: 0.562
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.008 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.072
+Volatility Regime: Stable
+Volatility Term Structure: 1.112
+Volatility Persistence: 0.024
+Market Regime: Low Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -160.00%
+Kelly Criterion: 0.076
+Sharpe Ratio: 0.702
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.110
+DQN Recommendation: 0.441
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $217.23B
+P/E Ratio: 487.47
+PEG Ratio: 3.324
+P/B Ratio: 43.42
+EV/EBITDA: 620.59
+Profit Margin: 0.16%
+Operating Margin: 0.01%
+ROA: 0.04%
+ROE: 0.11%
+Revenue TTM: $2.87B
+Gross Profit TTM: $2.30B
+EPS TTM: 0.19
+Quarterly Earnings Growth: -0.22%
+Quarterly Revenue Growth: 0.36%
+Analyst Target: $87.27
+Beta: 2.741
+52-Week High: $125.41
+52-Week Low: $20.33
+50-Day MA: $92.64
+200-Day MA: $59.29
+Dividend Yield: None
+Dividend Per Share: None
+
+==================================================
+
+=== ANALYSIS FOR TSLA ===
+Company: Tesla Inc
+Industry: MOTOR VEHICLES & PASSENGER CAR BODIES
+Sector: MANUFACTURING
+Current Price: $252.35
+Change: 0.04 (0.0159%)
+Sigma Score: 0.36447
+Recommendation: SELL - Balanced indicators with no clear edge in Rising volatility | History of frequent significant drawdowns (51 events, avg depth: -inf%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.601
+Reversion Score: 0.348
+Balance Factor: 0.550
+
+--- TECHNICAL INDICATORS ---
+RSI: 40.37
+MACD: -9.29931
+SMA Trend: -0.11293
+Distance from SMA200: -0.132
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.011
+Volatility Regime: Rising
+Volatility Term Structure: 1.359
+Volatility Persistence: 0.011
+Market Regime: Low Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -117.79%
+Kelly Criterion: 0.058
+Sharpe Ratio: 0.212
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 1.000
+DQN Recommendation: 0.668
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $811.69B
+P/E Ratio: 123.7
+PEG Ratio: 3.066
+P/B Ratio: 11.13
+EV/EBITDA: 53.63
+Profit Margin: 0.07%
+Operating Margin: 0.06%
+ROA: 0.04%
+ROE: 0.10%
+Revenue TTM: $97.69B
+Gross Profit TTM: $17.45B
+EPS TTM: 2.04
+Quarterly Earnings Growth: -0.71%
+Quarterly Revenue Growth: 0.02%
+Analyst Target: $313.96
+Beta: 2.58
+52-Week High: $488.54
+52-Week Low: $138.80
+50-Day MA: $288.76
+200-Day MA: $290.60
+Dividend Yield: None
+Dividend Per Share: None
+
+==================================================
+
+=== ANALYSIS FOR MSFT ===
+Company: Microsoft Corporation
+Industry: SERVICES-PREPACKAGED SOFTWARE
+Sector: TECHNOLOGY
+Current Price: $367.78
+Change: -3.83 (-1.0307%)
+Sigma Score: 0.22769
+Recommendation: SELL - Mixed signals in high volatility environment - position sizing caution advised | History of frequent significant drawdowns (46 events, avg depth: -107.8%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | Typically long recovery periods (132 days avg) | High historical drawdown risk (-4010.5%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.395
+Reversion Score: 0.530
+Balance Factor: 0.558
+
+--- TECHNICAL INDICATORS ---
+RSI: 45.02
+MACD: -4.29336
+SMA Trend: -0.02803
+Distance from SMA200: -0.119
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 10.7 days (Fast)
+Mean Reversion Beta: -0.063
+Volatility Regime: Rising
+Volatility Term Structure: 1.554
+Volatility Persistence: -0.007
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -4010.53%
+Kelly Criterion: 0.023
+Sharpe Ratio: 0.165
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.121
+DQN Recommendation: 0.452
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $2762.54B
+P/E Ratio: 29.68
+PEG Ratio: 1.699
+P/B Ratio: 9.13
+EV/EBITDA: 19.27
+Profit Margin: 0.35%
+Operating Margin: 0.46%
+ROA: 0.15%
+ROE: 0.34%
+Revenue TTM: $261.80B
+Gross Profit TTM: $181.71B
+EPS TTM: 12.39
+Quarterly Earnings Growth: 0.10%
+Quarterly Revenue Growth: 0.12%
+Analyst Target: $495.00
+Beta: 1
+52-Week High: $465.64
+52-Week Low: $344.79
+50-Day MA: $390.81
+200-Day MA: $417.54
+Dividend Yield: 0.01%
+Dividend Per Share: $3.16
+
+==================================================
+
+=== ANALYSIS FOR UBER ===
+Company: Uber Technologies Inc
+Industry: SERVICES-BUSIN    ESS SERVICES, NEC
+Sector: TRADE & SERVICES
+Current Price: $75.24
+Change: 2.18 (2.9838%)
+Sigma Score: 0.26789
+Recommendation: SELL - Balanced indicators with no clear edge in Stable volatility | History of frequent significant drawdowns (20 events, avg depth: -inf%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | Typically long recovery periods (70 days avg) | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.537
+Reversion Score: 0.459
+Balance Factor: 0.525
+
+--- TECHNICAL INDICATORS ---
+RSI: 54.32
+MACD: -0.03401
+SMA Trend: -0.02550
+Distance from SMA200: 0.056
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 282.0 days (Very Slow or None)
+Mean Reversion Beta: -0.002
+Volatility Regime: Stable
+Volatility Term Structure: 1.295
+Volatility Persistence: 0.072
+Market Regime: Medium Volatility 1
+
+--- RISK METRICS ---
+Maximum Drawdown: -656.13%
+Kelly Criterion: 0.033
+Sharpe Ratio: 0.190
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.178
+DQN Recommendation: 0.454
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $157.35B
+P/E Ratio: 16.5
+PEG Ratio: 44.73
+P/B Ratio: 7.3
+EV/EBITDA: 29.99
+Profit Margin: 0.22%
+Operating Margin: 0.06%
+ROA: 0.04%
+ROE: 0.56%
+Revenue TTM: $43.98B
+Gross Profit TTM: $14.60B
+EPS TTM: 4.56
+Quarterly Earnings Growth: 3.84%
+Quarterly Revenue Growth: 0.20%
+Analyst Target: $88.56
+Beta: 1.366
+52-Week High: $87.00
+52-Week Low: $54.84
+50-Day MA: $74.22
+200-Day MA: $71.26
+Dividend Yield: None
+Dividend Per Share: None
+
+==================================================
+
+=== ANALYSIS FOR INMB ===
+Company: INmune Bio Inc
+Industry: BIOLOGICAL PRODUCTS, (NO DISGNOSTIC SUBSTANCES)
+Sector: LIFE SCIENCES
+Current Price: $7.84
+Change: 0.56 (7.6923%)
+Sigma Score: 0.17609
+Recommendation: STRONG SELL - Balanced indicators with no clear edge in Stable volatility | History of frequent significant drawdowns (10 events, avg depth: -inf%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | Typically long recovery periods (70 days avg) | High historical drawdown risk (-inf%) | Poor risk-adjusted returns (Sharpe=-0.00)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.504
+Reversion Score: 0.471
+Balance Factor: 0.532
+
+--- TECHNICAL INDICATORS ---
+RSI: 52.43
+MACD: -0.14074
+SMA Trend: -0.05826
+Distance from SMA200: 0.160
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 15.0 days (Fast)
+Mean Reversion Beta: -0.045
+Volatility Regime: Stable
+Volatility Term Structure: 1.143
+Volatility Persistence: 0.010
+Market Regime: Medium Volatility 1
+
+--- RISK METRICS ---
+Maximum Drawdown: -533.33%
+Kelly Criterion: 0.024
+Sharpe Ratio: -0.003
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.123
+DQN Recommendation: 0.534
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $180.19M
+P/E Ratio: None
+PEG Ratio: None
+P/B Ratio: 5.2
+EV/EBITDA: -5.31
+Profit Margin: 0.00%
+Operating Margin: -3045.36%
+ROA: -0.55%
+ROE: -1.20%
+Revenue TTM: $14000.00
+Gross Profit TTM: $14000.00
+EPS TTM: -2.11
+Quarterly Earnings Growth: 0.00%
+Quarterly Revenue Growth: -1.00%
+Analyst Target: $23.40
+Beta: 1.876
+52-Week High: $12.72
+52-Week Low: $4.32
+50-Day MA: $8.00
+200-Day MA: $6.76
+Dividend Yield: None
+Dividend Per Share: None
+
+==================================================
+
+=== ANALYSIS FOR SPY ===
+Current Price: $527.25
+Change: 13.37 (2.6018%)
+Sigma Score: 0.20198
+Recommendation: SELL - Mixed signals in high volatility environment - position sizing caution advised | History of frequent significant drawdowns (90 events, avg depth: -inf%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | Typically long recovery periods (62 days avg) | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.451
+Reversion Score: 0.681
+Balance Factor: 0.565
+
+--- TECHNICAL INDICATORS ---
+RSI: 41.67
+MACD: -11.96320
+SMA Trend: -0.04795
+Distance from SMA200: -0.080
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: -0.001 (Strong Mean Reversion)
+Mean Reversion Half-Life: 7.9 days (Fast)
+Mean Reversion Beta: -0.084
+Volatility Regime: Rising
+Volatility Term Structure: 2.084
+Volatility Persistence: 0.230
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -422.47%
+Kelly Criterion: 0.033
+Sharpe Ratio: 0.273
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.221
+DQN Recommendation: 0.535
+
+==================================================
+
+=== ANALYSIS FOR CMG ===
+Company: Chipotle Mexican Grill Inc
+Industry: RETAIL-EATING PLACES
+Sector: TRADE & SERVICES
+Current Price: $51.78
+Change: 2.24 (4.5216%)
+Sigma Score: 0.19123
+Recommendation: STRONG SELL - Mixed signals in high volatility environment - position sizing caution advised | History of frequent significant drawdowns (94 events, avg depth: -inf%) | High probability of future drawdown (1.00) based on historical patterns | Poor historical recovery pattern (0.00) | High historical drawdown risk (-inf%)
+
+--- COMPONENT SCORES ---
+Momentum Score: 0.506
+Reversion Score: 0.703
+Balance Factor: 0.550
+
+--- TECHNICAL INDICATORS ---
+RSI: 63.95
+MACD: -0.40159
+SMA Trend: -0.02878
+Distance from SMA200: -0.074
+Volatility: 0.00000
+
+--- MARKET REGIME ---
+Hurst Exponent: 0.002 (Strong Mean Reversion)
+Mean Reversion Half-Life: 0.0 days (Fast)
+Mean Reversion Beta: 0.009
+Volatility Regime: Rising
+Volatility Term Structure: 1.567
+Volatility Persistence: -0.004
+Market Regime: High Volatility
+
+--- RISK METRICS ---
+Maximum Drawdown: -168.46%
+Kelly Criterion: 0.054
+Sharpe Ratio: 0.009
+
+--- ADVANCED METRICS ---
+No advanced metrics available
+
+--- MACHINE LEARNING ---
+LSTM Prediction: 0.100
+DQN Recommendation: 0.551
+
+--- FUNDAMENTAL DATA ---
+Market Cap: $69.77B
+P/E Ratio: 45.82
+PEG Ratio: 2.229
+P/B Ratio: 19.99
+EV/EBITDA: 30.88
+Profit Margin: 0.14%
+Operating Margin: 0.17%
+ROA: 0.14%
+ROE: 0.46%
+Revenue TTM: $11.49B
+Gross Profit TTM: $4.63B
+EPS TTM: 1.13
+Quarterly Earnings Growth: 0.08%
+Quarterly Revenue Growth: 0.06%
+Analyst Target: $57.94
+Beta: 1.273
+52-Week High: $69.26
+52-Week Low: $44.46
+50-Day MA: $50.61
+200-Day MA: $55.91
+Dividend Yield: None
+Dividend Per Share: None
+
+

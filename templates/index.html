@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>QuantPulse | Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ range(1000, 9999) | random }}"> </head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Quant<span>Pulse</span></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('index') }}"><i class="fas fa-home"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#"><i class="fas fa-chart-line"></i> Market (soon)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#"><i class="fas fa-newspaper"></i> News (soon)</a>
+                    </li>
+                 </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <button class="nav-link btn theme-toggle-btn" id="theme-toggle">
+                            <i class="fas fa-sun theme-light-icon"></i>
+                            <i class="fas fa-moon theme-dark-icon d-none"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i> {{ username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownUser">
+                            <li><a class="dropdown-item disabled" href="#"><i class="fas fa-cog fa-fw me-2"></i> Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt fa-fw me-2"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content container mt-4">
+        <div class="welcome-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2>Welcome back, {{ username }}!</h2>
+                    <p>Track your investments and discover new opportunities with QuantPulse's intelligent analysis.</p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <button class="btn btn-light" id="refresh-data" title="Refresh dashboard data">
+                        <i class="fas fa-sync-alt"></i> Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="ticker-container">
+            <div class="ticker-tape">
+                <span class="ticker-item" data-symbol="AAPL"><span class="ticker-symbol">AAPL</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="GOOGL"><span class="ticker-symbol">GOOGL</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="MSFT"><span class="ticker-symbol">MSFT</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="TSLA"><span class="ticker-symbol">TSLA</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="AMZN"><span class="ticker-symbol">AMZN</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="NFLX"><span class="ticker-symbol">NFLX</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="META"><span class="ticker-symbol">META</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="DIS"><span class="ticker-symbol">DIS</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="SPY"><span class="ticker-symbol">SPY</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="JPM"><span class="ticker-symbol">JPM</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="UBER"><span class="ticker-symbol">UBER</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="PLTR"><span class="ticker-symbol">PLTR</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="AAPL"><span class="ticker-symbol">AAPL</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="GOOGL"><span class="ticker-symbol">GOOGL</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="MSFT"><span class="ticker-symbol">MSFT</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+                <span class="ticker-item" data-symbol="TSLA"><span class="ticker-symbol">TSLA</span> <span class="ticker-price">$---.--</span> <span class="ticker-change">--.-%</span></span>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card stats-card">
+                    <i class="fas fa-bullseye"></i>
+                    <h3 id="analysis-count">{{ analyses|length }}</h3>
+                    <p>Your Analyses</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card stats-card">
+                    <i class="fas fa-star"></i>
+                    <h3 id="watchlist-count">{{ watchlist|length }}</h3>
+                    <p>Watchlist Items</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card stats-card">
+                    <i class="fas fa-arrow-trend-up"></i>
+                    <h3 id="buy-count">0</h3>
+                    <p>Buy/Strong Buy Actions</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card stats-card">
+                    <i class="fas fa-arrow-trend-down"></i>
+                    <h3 id="sell-count">0</h3>
+                    <p>Sell/Strong Sell Actions</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card quick-stock-analysis-card">
+            <div class="card-header">
+                <i class="fas fa-search"></i> Quick Stock Analysis
+            </div>
+            <div class="card-body">
+                <form id="analyze-form" novalidate>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                        <input type="text" class="form-control form-control-lg" id="symbol" placeholder="Enter stock symbol (e.g., AAPL)" required>
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-chart-bar me-1"></i> Analyze</button>
+                    </div>
+                    <div class="form-text mt-2">Enter any valid stock symbol to get instant AI-driven financial analysis.</div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-lg-4 mb-4 mb-lg-0">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-star"></i> Your Watchlist
+                    </div>
+                    <div class="card-body p-0">
+                         <ul class="list-group list-group-flush" id="watchlist-container">
+                            {% if watchlist %}
+                                {% for symbol in watchlist %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="fw-bold me-2">{{ symbol }}</span>
+                                            <span class="price-display small text-muted" data-symbol="{{ symbol }}">$--.--</span>
+                                        </div>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-outline-primary quick-analyze" data-symbol="{{ symbol }}" title="Quick Analyze">
+                                                <i class="fas fa-chart-line"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger remove-watchlist" data-symbol="{{ symbol }}" title="Remove from Watchlist">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                             {% endif %}
+                             <li class="list-group-item text-center text-muted p-4 {% if watchlist %}d-none{% endif %}" id="empty-watchlist">
+                                <i class="fas fa-star fa-2x mb-3"></i>
+                                <p class="mb-1">Your watchlist is empty.</p>
+                                <p class="small mb-0">Add stocks to track them easily.</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-globe"></i> Market Overview
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between"><span>S&P 500</span><span class="text-success">+1.2% <i class="fas fa-caret-up"></i></span></li>
+                            <li class="list-group-item d-flex justify-content-between"><span>Nasdaq</span><span class="text-success">+1.5% <i class="fas fa-caret-up"></i></span></li>
+                            <li class="list-group-item d-flex justify-content-between"><span>Dow Jones</span><span class="text-success">+0.9% <i class="fas fa-caret-up"></i></span></li>
+                            <li class="list-group-item d-flex justify-content-between"><span>10-Year Treasury</span><span>3.85%</span></li>
+                            <li class="list-group-item d-flex justify-content-between"><span>VIX</span><span>18.25</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="card h-100 analysis-history-card">
+                    <div class="card-header">
+                        <i class="fas fa-history"></i> Your Analysis History
+                    </div>
+                     <div class="card-body p-0">
+                        {% if analyses %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="analyses-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>Date</th>
+                                            <th>Action</th>
+                                            <th>Current Price</th>
+                                            <th>P/L %</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for analysis in analyses %}
+                                            <tr>
+                                                <td class="fw-bold">{{ analysis['symbol'] }}</td>
+                                                <td class="small text-muted">{{ analysis['timestamp'] if analysis['timestamp'] else 'N/A' }}</td>
+                                                <td>
+                                                    <span class="action-badge {{ analysis['user_action']|default('none') }}">
+                                                        {{ analysis['user_action']|replace('_', ' ')|default('None') }}
+                                                    </span>
+                                                </td>
+                                                <td class="current-price text-muted" data-symbol="{{ analysis['symbol'] }}">$--.--</td>
+                                                <td class="profit-loss text-muted">--.--%</td> {# Kept as placeholder #}
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="{{ url_for('view_analysis', analysis_id=analysis['id']) }}" class="btn btn-outline-primary" title="View Details">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <button class="btn btn-outline-success add-watchlist {% if analysis['symbol'] in watchlist %}d-none{% endif %}" data-symbol="{{ analysis['symbol'] }}" title="Add to Watchlist">
+                                                            <i class="fas fa-star"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-warning remove-watchlist-alt {% if analysis['symbol'] not in watchlist %}d-none{% endif %}" data-symbol="{{ analysis['symbol'] }}" title="Remove from Watchlist">
+                                                            <i class="fas fa-star-half-alt"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-info share-analysis" data-id="{{ analysis['id'] }}" title="Share Analysis">
+                                                            <i class="fas fa-share-alt"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-danger delete-analysis" data-id="{{ analysis['id'] }}" title="Delete Analysis">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted p-5" id="empty-analyses">
+                                <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                <p class="mb-1">No analyses performed yet.</p>
+                                <p class="small mb-0">Use the analysis form above to get started.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div> </div> <footer class="footer">
+        <div class="container">
+             <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5>Quant<span>Pulse</span></h5>
+                    <p class="small">Professional stock analysis powered by AI.</p>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Disclaimer</h5>
+                    <p class="small">QuantPulse provides analysis for informational purposes only. It is not financial advice. Consult with a qualified professional before making investment decisions.</p>
+                </div>
+            </div>
+            <div class="text-center footer-bottom">
+                <p class="small mb-0">&copy; {{ now.year }} QuantPulse. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareModalLabel">Share Analysis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Share this analysis using the link below:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="share-link" readonly>
+                        <button class="btn btn-outline-primary" type="button" id="copy-link" title="Copy link to clipboard">
+                            <i class="fas fa-copy me-1"></i> Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1056"></div>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script> <script>
+         // Optional page-specific JS or variable passing
+         // const watchlistData = {{ watchlist | tojson }};
+    </script>
+</body>
+</html>

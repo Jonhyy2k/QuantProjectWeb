@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>QuantPulse | {{ symbol }} Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"> </head>
+<body>
+     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Quant<span>Pulse</span></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}"><i class="fas fa-home"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#"><i class="fas fa-chart-line"></i> Market (soon)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#"><i class="fas fa-newspaper"></i> News (soon)</a>
+                    </li>
+                 </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <button class="nav-link btn theme-toggle-btn" id="theme-toggle">
+                            <i class="fas fa-sun theme-light-icon"></i>
+                            <i class="fas fa-moon theme-dark-icon d-none"></i>
+                        </button>
+                    </li>
+                    {% if username %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i> {{ username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownUser">
+                            <li><a class="dropdown-item disabled" href="#"><i class="fas fa-cog fa-fw me-2"></i> Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt fa-fw me-2"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content container mt-4">
+        <div class="stock-header">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="https://api.dicebear.com/7.x/initials/svg?seed={{ symbol }}" width="64" height="64" alt="{{ symbol }} logo" class="rounded me-3 bg-light p-1">
+                        <div>
+                            <h1>{{ symbol }}</h1>
+                            <p class="company-name mb-0">{{ analysis.get('company_name', symbol + ' - Name Unavailable') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 text-lg-end">
+                    <div class="price-large">${{ analysis['price']|float|round(2) }}</div>
+                     {% set daily_change_pct = analysis.get('daily_change_percent', 0.0) %}
+                    {% set daily_change_abs = analysis.get('daily_change_absolute', 0.0) %}
+                    <span class="price-change {% if daily_change_pct >= 0 %}positive{% else %}negative{% endif %}">
+                        {% if daily_change_pct >= 0 %}<i class="fas fa-caret-up me-1"></i>{% else %}<i class="fas fa-caret-down me-1"></i>{% endif %}
+                        ${{ daily_change_abs|abs|round(2) }} ({{ daily_change_pct|abs|round(2) }}%) Today
+                    </span>
+                     <div class="mt-3">
+                        <button class="btn btn-sm btn-outline-warning me-2 add-watchlist {% if symbol in watchlist %}d-none{% endif %}" data-symbol="{{ symbol }}" title="Add to Watchlist">
+                            <i class="fas fa-star"></i> Add to Watchlist
+                        </button>
+                        <button class="btn btn-sm btn-warning me-2 remove-watchlist {% if symbol not in watchlist %}d-none{% endif %}" data-symbol="{{ symbol }}" title="Remove from Watchlist">
+                            <i class="fas fa-check"></i> In Watchlist
+                        </button>
+                        <button class="btn btn-sm btn-outline-light share-analysis" data-id="{{ analysis_id }}" title="Share Analysis">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                 <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-hand-pointer-right"></i> Your Investment Action</div>
+                    <div class="card-body">
+                        <p class="mb-3 text-muted">Select your intended action based on this analysis:</p>
+                        <div class="action-btn-group mb-3">
+                             <button class="action-btn btn btn-success set-action {% if user_action == 'strong_buy' %}active{% endif %}" data-action="strong_buy" data-id="{{ analysis_id }}">
+                                <i class="fas fa-rocket fa-lg"></i> Strong Buy <small>(1.5x)</small>
+                            </button>
+                            <button class="action-btn btn btn-primary set-action {% if user_action == 'buy' %}active{% endif %}" data-action="buy" data-id="{{ analysis_id }}">
+                                <i class="fas fa-arrow-up fa-lg"></i> Buy <small>(1x)</small>
+                            </button>
+                            <button class="action-btn btn btn-danger set-action {% if user_action == 'sell' %}active{% endif %}" data-action="sell" data-id="{{ analysis_id }}">
+                                <i class="fas fa-arrow-down fa-lg"></i> Sell <small>(1x)</small>
+                            </button>
+                            <button class="action-btn btn btn-dark set-action {% if user_action == 'strong_sell' %}active{% endif %}" data-action="strong_sell" data-id="{{ analysis_id }}">
+                                <i class="fas fa-anchor fa-lg"></i> Strong Sell <small>(1.5x)</small>
+                            </button>
+                        </div>
+                        <p class="text-center mb-0" id="action-status">
+                             <span class="badge {% if user_action %}bg-info{% else %}bg-secondary{% endif %}">
+                                Current Action: {{ user_action|replace('_', ' ')|title if user_action else 'None Selected' }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                 <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-chart-line"></i> Price Predictions</div>
+                    <div class="card-body">
+                         {% if analysis.get('predictions') %}
+                            <div class="row mb-3">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <div class="target-price {% if analysis['predictions']['expected_return_30d']|float >= 0 %}positive{% else %}negative{% endif %}">
+                                        <div class="price">${{ analysis['predictions']['price_target_30d']|float|round(2) }}</div>
+                                        <div class="change">
+                                            <small>30-Day Target</small>
+                                            {% if analysis['predictions']['expected_return_30d']|float >= 0 %} <i class="fas fa-caret-up me-1"></i> {% else %} <i class="fas fa-caret-down me-1"></i> {% endif %}
+                                            {{ analysis['predictions']['expected_return_30d']|float|round(2)|abs }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                     <div class="target-price {% if analysis['predictions']['expected_return_60d']|float >= 0 %}positive{% else %}negative{% endif %}">
+                                        <div class="price">${{ analysis['predictions']['price_target_60d']|float|round(2) }}</div>
+                                        <div class="change">
+                                            <small>60-Day Target</small>
+                                             {% if analysis['predictions']['expected_return_60d']|float >= 0 %} <i class="fas fa-caret-up me-1"></i> {% else %} <i class="fas fa-caret-down me-1"></i> {% endif %}
+                                            {{ analysis['predictions']['expected_return_60d']|float|round(2)|abs }}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                             {% if analysis.get('predictions', {}).get('plot_path') %}
+                                <div class="prediction-chart mb-3 text-center">
+                                    <img src="{{ url_for('static', filename=analysis['predictions']['plot_path']) }}" class="img-fluid border rounded" alt="Prediction Plot for {{ symbol }}">
+                                </div>
+                             {% elif analysis.get('plot_path') %}
+                                <div class="prediction-chart mb-3 text-center">
+                                    <img src="{{ url_for('static', filename=analysis['plot_path']) }}" class="img-fluid border rounded" alt="Prediction Plot for {{ symbol }}">
+                                </div>
+                             {% else %}
+                                <div class="prediction-chart d-flex align-items-center justify-content-center border rounded mb-3 bg-light">
+                                    <div class="text-center text-muted p-5">
+                                        <i class="fas fa-chart-area fa-3x mb-3"></i>
+                                        <p>Prediction chart not available.</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                        {% else %}
+                            <div class="text-center p-5 text-muted">
+                                <i class="fas fa-chart-line fa-3x mb-3"></i>
+                                <p>No prediction data available for this stock analysis.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                 <div class="card ticker-news mb-4">
+                     <div class="card-header"><i class="fas fa-newspaper"></i> Recent News for {{ symbol }}</div>
+                     <div class="list-group list-group-flush">
+                        {% if analysis.get('news') and analysis.news|length > 0 %}
+                            {% for item in analysis.news[:5] %} {# Limit news items #}
+                                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="list-group-item list-group-item-action news-item">
+                                    <div class="d-flex w-100 justify-content-between mb-1">
+                                         <h6 class="mb-0 title">{{ item.title }}</h6>
+                                         <small class="text-muted flex-shrink-0 ms-2">{{ item.published_at }}</small>
+                                    </div>
+                                    <small class="source text-muted">{{ item.source }}</small>
+                                    {% if item.sentiment_score is not none %}
+                                         {% set score = item.sentiment_score|float %}
+                                         {% set sentiment_label = 'neutral' %}
+                                         {% set sentiment_badge = 'bg-secondary text-dark' %} {# Dark text for light bg #}
+                                         {% if score > 0.15 %} {% set sentiment_label = 'positive' %} {% set sentiment_badge = 'bg-success text-white' %}
+                                         {% elif score < -0.15 %} {% set sentiment_label = 'negative' %} {% set sentiment_badge = 'bg-danger text-white' %} {% endif %}
+                                        <span class="badge rounded-pill {{ sentiment_badge }} float-end sentiment">{{ sentiment_label }}</span>
+                                    {% endif %}
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="list-group-item text-center text-muted p-4">
+                                <i class="far fa-newspaper fa-2x mb-2"></i><br>
+                                No recent news found.
+                            </div>
+                        {% endif %}
+                     </div>
+                </div>
+
+            </div> <div class="col-lg-4">
+                 <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-clipboard-list"></i> Analysis Summary</div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                             <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Recommendation</strong>
+                                {% set rec = analysis.get('recommendation', 'N/A') %}
+                                {% set rec_class = 'bg-secondary' %}
+                                {% if 'Buy' in rec %} {% set rec_class = 'bg-success' %}
+                                {% elif 'Sell' in rec %} {% set rec_class = 'bg-danger' %} {% endif %}
+                                <span class="badge {{ rec_class }}">{{ rec }}</span>
+                             </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Sigma Score</strong>
+                                <span class="badge bg-info text-dark">{{ analysis['sigma']|float|round(5)|default('N/A') }}</span>
+                            </li>
+                            {% if analysis.get('news_sentiment_score') is not none %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>News Sentiment</strong>
+                                 {% set score = analysis.news_sentiment_score|float %}
+                                 {% set sentiment_label = 'Neutral' %}
+                                 {% set sentiment_bg = 'bg-secondary' %}
+                                 {% if score > 0.15 %} {% set sentiment_label = 'Positive' %} {% set sentiment_bg = 'bg-success' %}
+                                 {% elif score < -0.15 %} {% set sentiment_label = 'Negative' %} {% set sentiment_bg = 'bg-danger' %} {% endif %}
+                                <span class="badge {{ sentiment_bg }}">{{ sentiment_label }} ({{ score|round(3) }})</span>
+                                </li>
+                             {% endif %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-shield-alt"></i> Risk Metrics</div>
+                     <div class="card-body">
+                         {% if analysis.get('risk_metrics') %}
+                             {% set risk_level = analysis.risk_metrics.get('risk_level', 'Medium')|title %}
+                             {% set risk_class = 'metric-warning' %}
+                             {% set risk_icon = 'fa-exclamation-triangle' %}
+                             {% if risk_level == 'Low' %} {% set risk_class = 'metric-positive' %} {% set risk_icon = 'fa-check-circle' %}
+                             {% elif risk_level == 'High' %} {% set risk_class = 'metric-negative' %} {% set risk_icon = 'fa-times-circle' %} {% endif %}
+
+                            <div class="metric-card {{ risk_class }} mb-3">
+                                <div class="icon"><i class="fas {{ risk_icon }}"></i></div>
+                                <div class="content">
+                                    <h3>{{ risk_level }}</h3>
+                                    <p>Overall Risk Level</p>
+                                </div>
+                            </div>
+
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 pt-3 pb-2">
+                                    <span>Max Drawdown</span>
+                                    <strong>{{ analysis.risk_metrics.max_drawdown|float|round(2)|default('N/A') }}%</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                    <span>Sharpe Ratio</span>
+                                     <strong>{{ analysis.risk_metrics.sharpe|float|round(3)|default('N/A') }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                    <span>Kelly Criterion</span>
+                                     <strong>{{ analysis.risk_metrics.kelly|float|round(3)|default('N/A') }}</strong>
+                                </li>
+                            </ul>
+                         {% else %}
+                            <p class="text-muted text-center">Risk metrics not available.</p>
+                         {% endif %}
+                    </div>
+                </div>
+
+                 <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-industry"></i> Sector & Peers</div>
+                    <div class="card-body text-muted text-center">
+                         <i class="fas fa-ellipsis-h fa-2x mb-2"></i><br>
+                        <p class="small">Sector/Peer information coming soon.</p>
+                    </div>
+                 </div>
+
+            </div> </div> </div><footer class="footer">
+        <div class="container">
+             <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5>Quant<span>Pulse</span></h5>
+                    <p class="small">Professional stock analysis powered by AI.</p>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Disclaimer</h5>
+                    <p class="small">QuantPulse provides analysis for informational purposes only. It is not financial advice. Consult with a qualified professional before making investment decisions.</p>
+                </div>
+            </div>
+            <div class="text-center footer-bottom">
+                <p class="small mb-0">&copy; {{ now.year }} QuantPulse. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareModalLabel">Share Analysis for {{ symbol }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Share this analysis using the link below:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="share-link" readonly>
+                        <button class="btn btn-outline-primary" type="button" id="copy-link" title="Copy link to clipboard">
+                            <i class="fas fa-copy me-1"></i> Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1056"></div>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+     <script src="{{ url_for('static', filename='js/app.js') }}"></script> <script>
+         // Pass analysis_id and symbol to JS if needed by app.js handlers specific to this page
+         const pageAnalysisId = "{{ analysis_id }}";
+         const pageSymbol = "{{ symbol }}";
+          // Add analysis-page specific initializations here if needed
+         // Make sure app.js is written to handle these potentially undefined variables gracefully if not on analysis page
+         $(document).ready(function() {
+             console.log(`Analysis page loaded for ${pageSymbol} (ID: ${pageAnalysisId})`);
+         });
+     </script>
+
+</body>
+</html>
