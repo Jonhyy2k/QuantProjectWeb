@@ -1,3 +1,5 @@
 
 prediction_plots
 
+prediction_plots/*.png
+static/prediction_plots/*.png

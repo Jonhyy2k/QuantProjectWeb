@@ -14,6 +14,104 @@ import re
 import secrets  # For generating CSRF tokens
 import yfinance as yf  # For fetching real-time stock prices
 import traceback
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory # Added send_from_directory
+# ... (other imports)
+from datetime import datetime
+import os
+import json
+# Assuming Inputs_Cur.py is in the same directory or accessible via PYTHONPATH
+from Inputs_Cur import populate_valuation_model as run_inputs_cur_analysis # Rename for clarity
+
+# ... rest of your Flask app code ...
+app = Flask(__name__)
+app.secret_key = "your_secret_key_here"
+DB_FILE = "stock_analysis.db"
+TXT_FILE = "STOCK_ANALYSIS_RESULTS.txt"
+
+# Pushover configuration (update with your credentials or remove)
+PUSHOVER_USER_KEY = "uyy9e7ihn6r3u8yxmzw64btrqwv7gx"
+PUSHOVER_API_TOKEN = "am486b2ntgarapn4yc3ieaeyg5w6gd"
+
+# CSRF Protection
+def generate_csrf_token():
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(16)
+    return session['csrf_token']
+
+app.jinja_env.globals['csrf_token'] = generate_csrf_token
+
+
+# In server.py, outside any function (global or app config)
+CURRENCY_ANALYSIS_DIR = os.path.join(app.static_folder, 'currency_analyses_outputs')
+os.makedirs(CURRENCY_ANALYSIS_DIR, exist_ok=True)
+
+# In server.py
+
+@app.route('/inputs_cur', methods=['GET', 'POST'])
+def inputs_cur_page():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        if not request.form.get('csrf_token') == session.get('csrf_token'):
+            return jsonify({'error': 'CSRF token validation failed'}), 400
+
+        ticker_symbol = request.form.get('ticker_symbol', '').strip().upper()
+        if not ticker_symbol:
+            return render_template('inputs_cur_form.html', error="Ticker symbol cannot be empty.", username=session.get('username'))
+
+        try:
+            # Define the template path (ensure LIS_Valuation_Empty.xlsx is accessible)
+            template_path = "LIS_Valuation_Empty.xlsx" # Adjust path if necessary
+
+            # Run the analysis from Inputs_Cur.py
+            # The output_directory should be where Flask can serve files from, or you implement a download handler
+            generated_excel_path = run_inputs_cur_analysis(
+                template_path=template_path,
+                output_directory=CURRENCY_ANALYSIS_DIR,
+                ticker_symbol_from_web=ticker_symbol
+            )
+
+            if generated_excel_path:
+                # Make the file path relative to the static folder for URL generation
+                relative_excel_path = os.path.join('currency_analyses_outputs', os.path.basename(generated_excel_path))
+
+                # Save metadata to the database
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                analysis_data_json = json.dumps({
+                    "type": "Inputs_Cur_Analysis",
+                    "ticker": ticker_symbol,
+                    "output_file_relative": relative_excel_path, # Store relative path
+                    "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
+                timestamp_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    INSERT INTO analyses (user_id, symbol, analysis_data, timestamp, user_action)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (session['user_id'], ticker_symbol, analysis_data_json, timestamp_now, "Inputs_Cur Generated"))
+                conn.commit()
+                new_analysis_id = cursor.lastrowid
+                conn.close()
+
+                return render_template('inputs_cur_form.html',
+                                       success=f"Analysis for {ticker_symbol} completed!",
+                                       download_link=url_for('static', filename=relative_excel_path),
+                                       analysis_id=new_analysis_id,
+                                       username=session.get('username'))
+            else:
+                return render_template('inputs_cur_form.html', error="Analysis failed to generate the Excel file.", username=session.get('username'))
+
+        except FileNotFoundError as fnf_error:
+            app.logger.error(f"Template file not found: {fnf_error}")
+            return render_template('inputs_cur_form.html', error=f"Critical error: Valuation template file not found.", username=session.get('username'))
+        except Exception as e:
+            app.logger.error(f"Error during Inputs_Cur analysis for {ticker_symbol}: {e}")
+            traceback.print_exc() # For detailed error logging in Flask console
+            return render_template('inputs_cur_form.html', error=f"An error occurred: {str(e)}", username=session.get('username'))
+
+    return render_template('inputs_cur_form.html', username=session.get('username'))
 
 # --- Add this filter definition ---
 def format_datetime(value, format='%Y-%m-%d %H:%M'):
@@ -42,26 +140,7 @@ def format_datetime(value, format='%Y-%m-%d %H:%M'):
     # Otherwise, return the value as is
     return value
 
-
-# ... rest of your Flask app code ...
-app = Flask(__name__)
-app.secret_key = "your_secret_key_here"
-DB_FILE = "stock_analysis.db"
-TXT_FILE = "STOCK_ANALYSIS_RESULTS.txt"
-
 app.jinja_env.filters['datetimeformat'] = format_datetime
-
-# Pushover configuration (update with your credentials or remove)
-PUSHOVER_USER_KEY = "uyy9e7ihn6r3u8yxmzw64btrqwv7gx"
-PUSHOVER_API_TOKEN = "am486b2ntgarapn4yc3ieaeyg5w6gd"
-
-# CSRF Protection
-def generate_csrf_token():
-    if 'csrf_token' not in session:
-        session['csrf_token'] = secrets.token_hex(16)
-    return session['csrf_token']
-
-app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
 @app.context_processor
 def inject_now():
