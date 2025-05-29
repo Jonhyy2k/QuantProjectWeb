@@ -3379,10 +3379,6 @@ def create_improved_prediction_plot(stock_data, prediction_data, symbol, plot_di
         traceback.print_exc()
         return None
 
-# Initialize in-memory buffer for stock results
-stock_results_buffer = []
-
-
 def append_stock_result(result):
     """
     Append detailed stock analysis result to the output file
@@ -3558,42 +3554,9 @@ def append_stock_result(result):
         traceback.print_exc()
         return False
 
-def flush_results_buffer():
-    """
-    Write all buffered results to the output file in a single operation
-    """
-    global stock_results_buffer
-
-    if not stock_results_buffer:
-        print("[INFO] No results in buffer to flush")
-        return True
-
-    try:
-        # Combine all results with separators
-        combined_output = "\n" + "=" * 50 + "\n\n".join(stock_results_buffer) + "\n\n"
-
-        # Append to file in a single write operation
-        with open(OUTPUT_FILE, "a") as file:
-            file.write(combined_output)
-
-        print(f"[INFO] Successfully flushed {len(stock_results_buffer)} results to {OUTPUT_FILE}")
-
-        # Clear the buffer
-        stock_results_buffer.clear()
-        return True
-    except Exception as e:
-        print(f"[ERROR] Failed to flush results buffer: {e}")
-        traceback.print_exc()
-        return False
-
-
 def initialize_output_file():
     """Initialize the output file with a header"""
     try:
-        # Clear the buffer if any previous analysis was running
-        global stock_results_buffer
-        stock_results_buffer.clear()
-
         # Create directory for the output file if needed
         output_dir = os.path.dirname(OUTPUT_FILE)
         if output_dir and not os.path.exists(output_dir):
@@ -3601,10 +3564,10 @@ def initialize_output_file():
             print(f"[INFO] Created directory for output file: {output_dir}")
 
         # Create or append to the output file
-        mode = "a" if os.path.exists(OUTPUT_FILE) else "w"
+        mode = "w" # Always write, overwriting existing file
         with open(OUTPUT_FILE, mode) as file:
-            if mode == "w":  # Only write header for new files
-                file.write("===== OPTIMIZED STOCK ANALYSIS RESULTS =====\n")
+            # Header will always be written since mode is 'w'
+            file.write("===== OPTIMIZED STOCK ANALYSIS RESULTS =====\n")
                 file.write(f"Generated on: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
                 file.write(
                     f"GPU Acceleration: {'Enabled' if len(tensorflow.config.list_physical_devices('GPU')) > 0 else 'Disabled'}\n")
@@ -3625,11 +3588,6 @@ def main():
     print("=" * 50 + "\n")
 
     try:
-        # Initialize output file
-        if not initialize_output_file():
-            print("[ERROR] Failed to initialize output file. Check permissions and path.")
-            return
-
         # Create Alpha Vantage client
         client = AlphaVantageClient(ALPHA_VANTAGE_API_KEY)
 
@@ -3653,9 +3611,12 @@ def main():
             result = analyze_stock(symbol, client)
 
             if result:
-                # Append the result to the output file
-                append_stock_result(result)
-                print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
+                # Initialize output file before appending result
+                if not initialize_output_file():
+                    print("[ERROR] Failed to initialize output file. Check permissions and path.")
+                else:
+                    append_stock_result(result)
+                    print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
 
                 # Print prediction summary if available
                 if 'predictions' in result:
@@ -3669,10 +3630,6 @@ def main():
                         print(f"Prediction Plot saved to: {result['plot_path']}")
             else:
                 print(f"Analysis for {symbol} failed. See log for details.")
-
-            # Flush buffer before exiting
-            flush_results_buffer()
-            print("[INFO] Results buffer flushed.")
 
             # Exit after completing analysis
             return
@@ -3697,9 +3654,12 @@ def main():
                 result = analyze_stock(symbol, client)
 
                 if result:
-                    # Append the result to the output file
-                    append_stock_result(result)
-                    print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
+                    # Initialize output file before appending result
+                    if not initialize_output_file():
+                        print("[ERROR] Failed to initialize output file. Check permissions and path.")
+                    else:
+                        append_stock_result(result)
+                        print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
 
                     # Print prediction summary if available
                     if 'predictions' in result:
@@ -3739,8 +3699,12 @@ def main():
                             result = analyze_stock(symbol, client)
 
                             if result:
-                                append_stock_result(result)
-                                print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
+                                # Initialize output file before appending result
+                                if not initialize_output_file():
+                                    print("[ERROR] Failed to initialize output file. Check permissions and path.")
+                                else:
+                                    append_stock_result(result)
+                                    print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
 
                                 # Print prediction summary if available
                                 if 'predictions' in result:
@@ -3761,8 +3725,6 @@ def main():
 
             elif choice == '3':
                 print("Exiting program. Thank you!")
-                # Flush any remaining results before exiting
-                flush_results_buffer()
                 break
 
             else:
@@ -3771,9 +3733,7 @@ def main():
         print(f"[ERROR] An unexpected error occurred in the main function: {e}")
         traceback.print_exc()
     finally:
-        # Always ensure buffer is flushed at the end
-        flush_results_buffer()
-        print("[INFO] Final results buffer flushed.")
+        print("[INFO] Analysis complete.")
 
 
 if __name__ == "__main__":
