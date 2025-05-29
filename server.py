@@ -297,105 +297,100 @@ def extract_data_from_block(analysis_block_text):
 # --- REPLACE your existing find_most_recent_analysis_from_txt function with this ---
 def find_most_recent_analysis_from_txt(user_id, symbol):
     """
-    Search STOCK_ANALYSIS_RESULTS.txt for the most recent analysis for the given symbol.
-    Extracts data from the block and checks the database.
+    Parses STOCK_ANALYSIS_RESULTS.txt (which contains a file header and a single stock analysis)
+    to find the analysis for the given symbol. Extracts data and checks/updates the database.
 
     Returns a tuple of (analysis_data, timestamp_str, analysis_id) if found, else (None, None, None).
     """
-    symbol_to_find = symbol.upper() # Ensure comparison is case-insensitive
-    most_recent_block_text = None
-    most_recent_timestamp_obj = None
+    target_symbol_upper = symbol.upper()
 
-    # --- Robust block finding logic ---
+    # 1. File Existence and Reading
     if not os.path.exists(TXT_FILE):
         print(f"[INFO] {TXT_FILE} not found.")
         return None, None, None
-
     try:
-        with open(TXT_FILE, 'r', encoding='utf-8') as f: # Specify encoding
+        with open(TXT_FILE, 'r', encoding='utf-8') as f:
             content = f.read()
     except Exception as e:
         print(f"[ERROR] Failed to read {TXT_FILE}: {e}")
+        traceback.print_exc()
         return None, None, None
 
-    # Determine separator
-    if "===== STOCK_ANALYSIS_RESULTS =====" in content:
-        separator = "===== STOCK_ANALYSIS_RESULTS ====="
-    elif "==================================================" in content:
-        separator = "=================================================="
-    else:
-        separator = r'\n=== ANALYSIS FOR ' # Fallback
+    # 2. Timestamp Extraction (Global to the File)
+    file_timestamp_obj = None
+    file_timestamp_str = None
+    
+    timestamp_match = re.search(r'Generated on:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})', content)
+    if timestamp_match:
+        timestamp_str_from_file = timestamp_match.group(1)
+        try:
+            file_timestamp_obj = datetime.strptime(timestamp_str_from_file, '%Y-%m-%d %H:%M:%S')
+            file_timestamp_str = timestamp_str_from_file
+        except ValueError:
+            print(f"[WARNING] Could not parse 'Generated on:' timestamp '{timestamp_str_from_file}' from {TXT_FILE}.")
+            file_timestamp_obj = None # Ensure it's None if parsing fails
 
-    # Split content
-    if separator != r'\n=== ANALYSIS FOR ':
-        blocks = content.split(separator)
-    else:
-        blocks = re.split(separator, content)[1:]
-        blocks = ['=== ANALYSIS FOR ' + block for block in blocks]
+    if file_timestamp_obj is None: # Fallback if "Generated on:" is missing or unparseable
+        try:
+            mtime = os.path.getmtime(TXT_FILE)
+            file_timestamp_obj = datetime.fromtimestamp(mtime)
+            file_timestamp_str = file_timestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
+            print(f"[WARNING] Using file modification time {file_timestamp_str} as fallback for {TXT_FILE}.")
+        except Exception as e:
+            print(f"[ERROR] Could not get or parse file modification time for {TXT_FILE}: {e}")
+            traceback.print_exc()
+            return None, None, None # Critical if no timestamp can be determined
 
-    symbol_blocks_with_timestamps = []
-
-    for block_idx, block in enumerate(blocks):
-        if not block.strip(): continue
-
-        block_symbol_match = re.search(r'=== ANALYSIS FOR ([\w.-]+) ===', block, re.IGNORECASE)
-        if block_symbol_match and block_symbol_match.group(1).upper() == symbol_to_find:
-            timestamp_str = None
-            timestamp_obj = None
-
-            ts_match_new = re.search(r'Generated on:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})', block, re.IGNORECASE)
-            if ts_match_new:
-                timestamp_str = ts_match_new.group(1)
-                try:
-                    timestamp_obj = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
-                except ValueError:
-                    print(f"[WARNING] Could not parse timestamp '{timestamp_str}' in block {block_idx} for {symbol_to_find}")
-                    timestamp_obj = None
-
-            # Add other potential timestamp formats here...
-
-            if timestamp_obj:
-                 # Reconstruct block text accurately
-                 if separator != r'\n=== ANALYSIS FOR ':
-                      reconstructed_block = separator + block if not block.startswith(separator) else block
-                 else:
-                      reconstructed_block = block
-                 symbol_blocks_with_timestamps.append((reconstructed_block, timestamp_obj))
-            else:
-                # Attempt to use file modification time as a last resort timestamp
-                try:
-                    mtime = os.path.getmtime(TXT_FILE)
-                    timestamp_obj = datetime.datetime.fromtimestamp(mtime)
-                    print(f"[WARNING] Using file modification time {timestamp_obj} as fallback timestamp for block {block_idx} for {symbol_to_find}")
-                    # Reconstruct block text accurately
-                    if separator != r'\n=== ANALYSIS FOR ':
-                        reconstructed_block = separator + block if not block.startswith(separator) else block
-                    else:
-                        reconstructed_block = block
-                    symbol_blocks_with_timestamps.append((reconstructed_block, timestamp_obj))
-                except Exception as e:
-                    print(f"[ERROR] Could not get file modification time for {TXT_FILE}: {e}")
-                    print(f"[WARNING] Skipping block {block_idx} for {symbol_to_find} due to missing timestamp.")
+    # 3. Analysis Content Isolation
+    header_separator = "=================================================="
+    parts = content.split(header_separator, 1)
+    
+    isolated_analysis_content = None
+    if len(parts) > 1:
+        # Content after the first occurrence of the separator, then find the actual analysis block
+        content_after_header = parts[1]
+        # The actual analysis starts with "=== ANALYSIS FOR SYMBOL ==="
+        analysis_block_match = re.search(r'=== ANALYSIS FOR [\w.-]+ ===.*', content_after_header, re.DOTALL)
+        if analysis_block_match:
+            isolated_analysis_content = analysis_block_match.group(0)
+        else:
+            # This case might occur if the file exists but contains only the header
+            # or if the "=== ANALYSIS FOR..." part is missing after the separator.
+            print(f"[ERROR] Analysis block start '=== ANALYSIS FOR ... ===' not found after header separator in {TXT_FILE}.")
+            # Check if the symbol we are looking for is mentioned anywhere, to avoid false negatives if file is malformed
+            if target_symbol_upper not in content.upper():
+                 print(f"[INFO] Target symbol {target_symbol_upper} not found anywhere in {TXT_FILE}. Assuming no analysis present for this symbol.")
+                 return None, None, None # No analysis for this symbol
+            # If symbol is present but structure is wrong, it's an error
+            return None, None, None
 
 
-    if not symbol_blocks_with_timestamps:
-        print(f"[INFO] No valid analysis blocks found for {symbol_to_find} in {TXT_FILE}.")
+    if not isolated_analysis_content:
+        # This could happen if the separator is not found, or content_after_header was empty/malformed
+        print(f"[ERROR] Could not isolate analysis content from {TXT_FILE} using separator. File structure might be unexpected.")
+        # Similar check as above: if the symbol isn't in the file at all, it's not an error for *this* symbol.
+        if target_symbol_upper not in content.upper():
+             print(f"[INFO] Target symbol {target_symbol_upper} not found in {TXT_FILE}. Assuming no analysis present.")
+             return None, None, None
         return None, None, None
 
-    # Sort by timestamp to find the most recent
-    symbol_blocks_with_timestamps.sort(key=lambda x: x[1], reverse=True)
-    most_recent_block_text, most_recent_timestamp_obj = symbol_blocks_with_timestamps[0]
-    most_recent_timestamp_str = most_recent_timestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
-    print(f"[INFO] Found most recent block for {symbol_to_find} dated {most_recent_timestamp_str}")
-
-    # --- Extract data from the most recent block ---
-    analysis_data = extract_data_from_block(most_recent_block_text)
+    # 4. Data Extraction from Analysis Content
+    analysis_data = extract_data_from_block(isolated_analysis_content)
 
     if not analysis_data:
-        print(f"[ERROR] Failed to extract data from the most recent block for {symbol_to_find}")
+        print(f"[ERROR] Failed to extract data from the isolated analysis content in {TXT_FILE}.")
+        return None, None, None
+    
+    extracted_symbol_upper = analysis_data.get('symbol', '').upper()
+    if not extracted_symbol_upper:
+        print(f"[ERROR] Symbol not found in extracted analysis data from {TXT_FILE}.")
         return None, None, None
 
-    # --- Check/Insert into Database (similar to original logic) ---
+    if extracted_symbol_upper != target_symbol_upper:
+        print(f"[INFO] Extracted symbol '{extracted_symbol_upper}' does not match target '{target_symbol_upper}' in {TXT_FILE}. This file is for a different stock.")
+        return None, None, None # File is for a different stock
+
+    # 5. Database Interaction (Using file_timestamp_str)
     conn = get_db_connection()
     cursor = conn.cursor()
     analysis_id = None
@@ -604,32 +599,25 @@ def analyze():
     try:
         process = multiprocessing.Process(target=run_analysis_in_process, args=(session['user_id'], symbol))
         process.start()
-        process.join()
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT id
-            FROM analyses
-            WHERE user_id = ? AND symbol = ?
-            ORDER BY timestamp DESC
-            LIMIT 1
-        ''', (session['user_id'], symbol))
-        new_analysis = cursor.fetchone()
-        conn.close()
-        
-        if new_analysis:
-            analysis_id = new_analysis['id']
+        process.join() # Wait for the analysis process to complete
+
+        # After the process, try to get the analysis details from the TXT file
+        # find_most_recent_analysis_from_txt will also handle DB insertion/update
+        analysis_data, timestamp_str, analysis_id_from_txt = find_most_recent_analysis_from_txt(session['user_id'], symbol)
+
+        if analysis_id_from_txt:
             send_pushover_notification(
                 session['username'],
                 f"Analysis completed for {symbol}",
-                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id}"
+                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id_from_txt}"
             )
-            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id})
+            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id_from_txt})
         else:
-            return jsonify({'error': 'Analysis failed to save to database'}), 500
+            app.logger.error(f"Analysis for {symbol} (user {session['user_id']}) ran, but find_most_recent_analysis_from_txt failed to return an analysis ID.")
+            return jsonify({'error': 'Analysis ran, but failed to save or process for history.'}), 500
     except Exception as e:
-        print(f"[ERROR] Analysis error: {e}")
+        app.logger.error(f"Exception in /analyze route for {symbol} (user {session['user_id']}): {e}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/analyze/new', methods=['POST'])
@@ -644,32 +632,25 @@ def analyze_new():
     try:
         process = multiprocessing.Process(target=run_analysis_in_process, args=(session['user_id'], symbol))
         process.start()
-        process.join()
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT id
-            FROM analyses
-            WHERE user_id = ? AND symbol = ?
-            ORDER BY timestamp DESC
-            LIMIT 1
-        ''', (session['user_id'], symbol))
-        new_analysis = cursor.fetchone()
-        conn.close()
-        
-        if new_analysis:
-            analysis_id = new_analysis['id']
+        process.join() # Wait for the analysis process to complete
+
+        # After the process, try to get the analysis details from the TXT file
+        # find_most_recent_analysis_from_txt will also handle DB insertion/update
+        analysis_data, timestamp_str, analysis_id_from_txt = find_most_recent_analysis_from_txt(session['user_id'], symbol)
+
+        if analysis_id_from_txt:
             send_pushover_notification(
                 session['username'],
                 f"Analysis completed for {symbol}",
-                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id}"
+                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id_from_txt}"
             )
-            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id})
+            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id_from_txt})
         else:
-            return jsonify({'error': 'Analysis failed to save to database'}), 500
+            app.logger.error(f"Analysis for {symbol} (user {session['user_id']}) (new) ran, but find_most_recent_analysis_from_txt failed to return an analysis ID.")
+            return jsonify({'error': 'Analysis ran, but failed to save or process for history.'}), 500
     except Exception as e:
-        print(f"[ERROR] Analysis error: {e}")
+        app.logger.error(f"Exception in /analyze/new route for {symbol} (user {session['user_id']}): {e}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/action', methods=['POST'])
