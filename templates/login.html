@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantPulse | Login</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+         /* --- CSS - Subset relevant for login/register, ideally from external file --- */
+        :root {
+            --primary: #0d3b66; --secondary: #4a96d3; --accent: #5bc0be; --success: #2ac769;
+            --danger: #ee6c4d; --warning: #ffd166; --light: #f8f9fa; --dark: #212529;
+            --gray: #6c757d; --text-dark: #2c3e50; --bg-light: #f5f7fa;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-light); color: var(--text-dark); display: flex; flex-direction: column; min-height: 100vh; }
+        .navbar { background-color: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 0 !important; /* Remove margin for auth pages */ }
+        .navbar-brand { font-weight: 700; color: white !important; }
+        .navbar-brand span { color: var(--accent); }
+        .card { border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: white; }
+        .card-header { font-weight: 600; background-color: white; border-bottom: 1px solid rgba(0,0,0,0.05); padding: 16px 20px; border-radius: 10px 10px 0 0 !important; display: flex; align-items: center; color: var(--primary);}
+        .card-header i { margin-right: 10px; color: var(--secondary); }
+        .card-body { padding: 30px; } /* More padding for forms */
+        .btn-primary { background-color: var(--primary); border-color: var(--primary); padding: 10px 20px; font-weight: 600;}
+        .btn-primary:hover { background-color: #05284d; border-color: #05284d; }
+        .btn-link { color: var(--primary); text-decoration: none;}
+        .btn-link:hover { color: var(--secondary); text-decoration: underline;}
+        .form-control { padding: 10px 15px; border-radius: 8px; }
+        .form-label { font-weight: 500; margin-bottom: 5px;}
+        .auth-wrapper { display: flex; align-items: center; justify-content: center; flex-grow: 1; padding: 20px;}
+        .footer { background-color: var(--primary); color: rgba(255, 255, 255, 0.8); padding: 20px 0; /* Reduced padding */ margin-top: auto; /* Pushes footer down */}
+        .footer a { color: var(--accent); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; color: white; }
+        .footer p { margin-bottom: 0; font-size: 0.9rem;}
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Stock<span>Pulse</span></a>
+        </div>
+    </nav>
+
+    <div class="auth-wrapper">
+        <div class="card col-lg-4 col-md-6 col-sm-10 col-12">
+             <div class="card-header">
+                <i class="fas fa-sign-in-alt"></i> Login to Your Account
+            </div>
+            <div class="card-body">
+                {% if error %}
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                         <i class="fas fa-exclamation-triangle me-2"></i>
+                        <div>{{ error }}</div>
+                    </div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <div class="input-group">
+                           <span class="input-group-text"><i class="fas fa-user"></i></span>
+                           <input type="text" class="form-control" id="username" name="username" required placeholder="Enter your username">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Password</label>
+                         <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" required placeholder="Enter your password">
+                         </div>
+                    </div>
+                    <div class="d-grid gap-2 mb-3">
+                         <button type="submit" class="btn btn-primary">Login</button>
+                    </div>
+                    <div class="text-center">
+                        <span>Don't have an account?</span>
+                        <a href="{{ url_for('register') }}" class="btn btn-link">Register here</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container text-center">
+            <p class="small mb-0">&copy; 2025 QuantPulse. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
