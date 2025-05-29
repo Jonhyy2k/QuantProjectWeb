@@ -3,7 +3,7 @@ import sqlite3
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-from main import main as run_stock_analysis
+from mainall import perform_analysis_for_server as run_stock_analysis # Updated import
 import requests
 import schedule
 import time

@@ -3580,6 +3580,44 @@ def initialize_output_file():
         traceback.print_exc()
         return False
 
+def perform_analysis_for_server(symbol, user_id=None):
+    """
+    Performs stock analysis for a given symbol, optionally for a user.
+    Initializes client, analyzes stock, initializes output file, appends result, and prints summary.
+    """
+    # Create prediction plots directory if it doesn't exist
+    # This is a good place as analyze_stock (which might create a plot) is called soon after.
+    try:
+        os.makedirs("prediction_plots", exist_ok=True)
+        # print("[INFO] Ensured directory exists for prediction plots: prediction_plots") # Optional: can be verbose
+    except Exception as e:
+        print(f"[WARNING] Failed to create prediction plots directory: {e}")
+        traceback.print_exc()
+
+    client = AlphaVantageClient(ALPHA_VANTAGE_API_KEY)
+    result = analyze_stock(symbol, client)
+
+    if result:
+        if not initialize_output_file():
+            print(f"[ERROR] Failed to initialize output file for {symbol}. Check permissions and path.")
+            # Potentially return an error or raise an exception if file init is critical
+        else:
+            append_stock_result(result)
+            print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
+
+        if 'predictions' in result and result['predictions'] is not None: # Ensure predictions exist
+            pred = result['predictions']
+            print(f"\nPrice Predictions for {symbol}:")
+            print(f"30-Day Target: ${pred.get('price_target_30d', 0):.2f} ({pred.get('expected_return_30d', 0):.2f}%)")
+            print(f"60-Day Target: ${pred.get('price_target_60d', 0):.2f} ({pred.get('expected_return_60d', 0):.2f}%)")
+
+            if 'plot_path' in result and result['plot_path'] is not None:
+                print(f"Prediction Plot for {symbol} saved to: {result['plot_path']}")
+    else:
+        print(f"Analysis for {symbol} failed. See log for details.")
+    
+    return result
+
 # Main function
 def main():
     """Main function to run the stock analysis"""
@@ -3588,53 +3626,18 @@ def main():
     print("=" * 50 + "\n")
 
     try:
-        # Create Alpha Vantage client
-        client = AlphaVantageClient(ALPHA_VANTAGE_API_KEY)
-
-        # Create prediction plots directory
-        if not os.path.exists("prediction_plots"):
-            try:
-                os.makedirs("prediction_plots", exist_ok=True)
-                print("[INFO] Created directory for prediction plots")
-            except Exception as e:
-                print(f"[WARNING] Failed to create prediction plots directory: {e}")
-                traceback.print_exc()
-
         # Check if command line arguments were provided
         import sys
         if len(sys.argv) > 1:
             # Use the first argument as the stock symbol
             symbol = sys.argv[1].strip().upper()
             print(f"[INFO] Using command line argument for symbol: {symbol}")
-
-            # Analyze the stock directly
-            result = analyze_stock(symbol, client)
-
-            if result:
-                # Initialize output file before appending result
-                if not initialize_output_file():
-                    print("[ERROR] Failed to initialize output file. Check permissions and path.")
-                else:
-                    append_stock_result(result)
-                    print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
-
-                # Print prediction summary if available
-                if 'predictions' in result:
-                    pred = result['predictions']
-                    print(f"\nPrice Predictions:")
-                    print(f"30-Day Target: ${pred['price_target_30d']:.2f} ({pred['expected_return_30d']:.2f}%)")
-                    print(f"60-Day Target: ${pred['price_target_60d']:.2f} ({pred['expected_return_60d']:.2f}%)")
-
-                    # Display path to the prediction plot if available
-                    if 'plot_path' in result:
-                        print(f"Prediction Plot saved to: {result['plot_path']}")
-            else:
-                print(f"Analysis for {symbol} failed. See log for details.")
-
-            # Exit after completing analysis
-            return
+            perform_analysis_for_server(symbol) # user_id is optional
+            return # Exit after command-line analysis
 
         # Interactive mode if no command line arguments
+        # Alpha Vantage client for symbol search in interactive mode
+        search_client = AlphaVantageClient(ALPHA_VANTAGE_API_KEY)
         while True:
             print("\nOptions:")
             print("1. Analyze a stock")
@@ -3645,81 +3648,31 @@ def main():
 
             if choice == '1':
                 symbol = input("Enter stock symbol to analyze: ").strip().upper()
-
                 if not symbol:
                     print("Please enter a valid stock symbol.")
                     continue
-
-                # Analyze the stock
-                result = analyze_stock(symbol, client)
-
-                if result:
-                    # Initialize output file before appending result
-                    if not initialize_output_file():
-                        print("[ERROR] Failed to initialize output file. Check permissions and path.")
-                    else:
-                        append_stock_result(result)
-                        print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
-
-                    # Print prediction summary if available
-                    if 'predictions' in result:
-                        pred = result['predictions']
-                        print(f"\nPrice Predictions:")
-                        print(f"30-Day Target: ${pred['price_target_30d']:.2f} ({pred['expected_return_30d']:.2f}%)")
-                        print(f"60-Day Target: ${pred['price_target_60d']:.2f} ({pred['expected_return_60d']:.2f}%)")
-
-                        # Display path to the prediction plot if available
-                        if 'plot_path' in result:
-                            print(f"Prediction Plot saved to: {result['plot_path']}")
-                else:
-                    print(f"Analysis for {symbol} failed. See log for details.")
+                perform_analysis_for_server(symbol) # user_id is optional
 
             elif choice == '2':
                 keywords = input("Enter company name or keywords to search: ").strip()
-
                 if not keywords:
                     print("Please enter valid search terms.")
                     continue
-
-                matches = client.get_symbol_search(keywords)
+                
+                matches = search_client.get_symbol_search(keywords) # Use search_client here
 
                 if matches:
                     print("\nMatching stocks:")
                     print(f"{'Symbol':<10} {'Type':<8} {'Region':<8} Name")
                     print("-" * 70)
-
                     for match in matches:
                         print(f"{match['symbol']:<10} {match['type']:<8} {match['region']:<8} {match['name']}")
-
+                    
                     analyze_choice = input("\nWould you like to analyze one of these stocks? (y/n): ").strip().lower()
-
                     if analyze_choice == 'y':
-                        symbol = input("Enter the symbol to analyze: ").strip().upper()
-                        if symbol:
-                            result = analyze_stock(symbol, client)
-
-                            if result:
-                                # Initialize output file before appending result
-                                if not initialize_output_file():
-                                    print("[ERROR] Failed to initialize output file. Check permissions and path.")
-                                else:
-                                    append_stock_result(result)
-                                    print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
-
-                                # Print prediction summary if available
-                                if 'predictions' in result:
-                                    pred = result['predictions']
-                                    print(f"\nPrice Predictions:")
-                                    print(
-                                        f"30-Day Target: ${pred['price_target_30d']:.2f} ({pred['expected_return_30d']:.2f}%)")
-                                    print(
-                                        f"60-Day Target: ${pred['price_target_60d']:.2f} ({pred['expected_return_60d']:.2f}%)")
-
-                                    # Display path to the prediction plot if available
-                                    if 'plot_path' in result:
-                                        print(f"Prediction Plot saved to: {result['plot_path']}")
-                            else:
-                                print(f"Analysis for {symbol} failed. See log for details.")
+                        symbol_to_analyze = input("Enter the symbol to analyze: ").strip().upper()
+                        if symbol_to_analyze:
+                            perform_analysis_for_server(symbol_to_analyze) # user_id is optional
                 else:
                     print("No matching stocks found.")
 
