@@ -1,6 +1,26 @@
-# Inputs_Cur.py
 # You need to login to the Bloomberg Terminal for the script to work!
-# All data is given in USD
+# Run it using the arrow on the top right.
+# Enter the stock ticker while specifying the country in the end
+# For example AAPL US or 000660 KS (the script will automatically add [Equity])
+
+# On this model there is an issue, no peers are fetched and it subprocess of data is dependant on the terminal so, outside the terminal as they are hardcoded
+# the formulas wont work, to fix this, enter the peers name (eg. AMZN US Equity, etc...) copy the entire data on the peers and special paste it values only
+# on the same space it was, shouldnt be any formulas left
+# ... AND as excel 2016 doesnt work well with xlookup, you need to download it and open in teams/web/ a pc with excel >2016...
+
+# On the excel if the cell has N/A (or some iteration of this...) an error has occured with the fetching of data and must be checked manually, this is so that
+# if for example it had returned 0 instead, it would cause doubt as in some cases the values for certain names are 0
+
+#--------#-------# TO DO LIST
+# To fix... excel peers ratios are not linked, gonna kms before i do that tho
+# Peers thing on.. my pc doesnt do that idk why 
+# Holders and board, must also be same issue, double check on 23
+
+# Must watch before making it work<<<
+# https://www.youtube.com/watch?v=qxgSbP3H3YY
+
+
+# PARA DE APAGAR OS MEUS FICHEIROS
 
 import blpapi
 import openpyxl
@@ -8,199 +28,227 @@ import shutil
 import os
 import time
 from datetime import datetime
-import traceback
-
 
 def setup_bloomberg_session(ticker_symbol):
-    """Initialize Bloomberg API session with detailed logging."""
     options = blpapi.SessionOptions()
     options.setServerHost("localhost")
     options.setServerPort(8194)
     session = blpapi.Session(options)
 
-    print(f"[INFO] Attempting to connect to Bloomberg for {ticker_symbol}...")
+    print(f"\n✨ Attempting to connect to Bloomberg for {ticker_symbol}...")
     if not session.start():
-        print("[WARNING] Failed to start Bloomberg session. Ensure Bloomberg Terminal is running.")
+        print("⚠️ Whoops! Failed to start the Bloomberg session. Please make sure the Bloomberg Terminal is running and the API is enabled.")
         return None
     if not session.openService("//blp/refdata"):
-        print("[WARNING] Failed to open Bloomberg reference data service.")
+        print("⚠️ Uh oh! Failed to open the Bloomberg reference data service. Can't get the data without this.")
         session.stop()
         return None
-    print("[INFO] Bloomberg session started successfully.")
+    print(f"✅ Great! Bloomberg session for {ticker_symbol} started successfully. Let's get some data!")
     return session
 
 def fetch_bloomberg_data(session, ticker, fields, field_to_name_map, start_year=2014, end_year=2024, timeout=30):
-    """Fetch historical data from Bloomberg with timeout and error handling, using USD override."""
     if not fields:
-        print("[INFO] No fields to fetch in this batch.")
+        print("ℹ️ Just a heads up: No specific data fields were requested for this round.")
         return {}
 
     if len(fields) > 25:
-        # This is a hard limit for a single HistoricalDataRequest with many fields.
-        # Consider splitting into multiple requests if more than 25 unique fields are needed at once.
-        # For now, this script batches fields before calling this, so this check is an internal safeguard.
-        print(f"[WARNING] Attempting to fetch {len(fields)} fields, which might exceed typical Bloomberg limits per request if not batched properly by calling function.")
-
+        print(f"🔍 Lots of data requested! ({len(fields)} fields). Don't worry, I'll handle it, but if this were a single request, it might be a bit much for Bloomberg.")
 
     ref_data_service = session.getService("//blp/refdata")
     request = ref_data_service.createRequest("HistoricalDataRequest")
-    security = f"{ticker}" # Assumes ticker is correctly formatted like "AAPL US Equity"
-    request.getElement("securities").appendValue(security)
+
+    security_for_request = f"{ticker} Equity"
+    request.getElement("securities").appendValue(security_for_request)
+
+    parts = ticker.strip().split()
+    country_code = ""
+    if len(parts) > 1 and len(parts[-1]) == 2 and parts[-1].isalpha():
+        country_code = parts[-1].upper()
+
+    if country_code and country_code != "US":
+        print(f"🌍 Looks like a non-US stock ({ticker}, Country: {country_code}). I'll ask Bloomberg for data in USD to keep things consistent.")
+        
+        request.set("currency", "USD")
+
+        # USD currency override
+        #overrides = request.getElement("overrides")
+        #override = overrides.appendElement()
+        #override.setElement("fieldId", "EQY_FUND_CRNCY")
+        #override.setElement("value", "USD")
+        
+    elif country_code == "US":
+        print(f"🇺🇸 This stock ({ticker}) is US-based. Data should come in USD by default.")
+    else:
+        print(f"🤔 Can't quite tell the country for {ticker} from the ticker. I'll request data in its local currency.")
+
     for field in fields:
         request.getElement("fields").appendValue(field)
+
     request.set("periodicitySelection", "YEARLY")
     request.set("startDate", f"{start_year}0101")
     request.set("endDate", f"{end_year}1231")
 
-    # USD currency override
-    overrides = request.getElement("overrides")
-    override = overrides.appendElement()
-    override.setElement("fieldId", "EQY_FUND_CRNCY")
-    override.setElement("value", "USD")
-
-    print(f"[DEBUG] Sending request for {security} with fields: {fields} (currency override: USD)")
+    print(f"📡 Sending a request to Bloomberg for {security_for_request}. Asking for: {fields}")
     session.sendRequest(request)
 
-    data = {field: {} for field in fields} # Initialize data structure for this batch
-    invalid_fields_in_batch = []
-    start_request_time = time.time()
+    data = {field: {} for field in fields}
+    invalid_fields = []
+    start_time = time.time()
 
-    # Event handling loop
     while True:
-        event = session.nextEvent(500) # Check for events every 500ms
+        if time.time() - start_time >= timeout:
+            print(f"⏳ Timeout! It's been {timeout} seconds, and I'm still waiting for all the data for {security_for_request}. I'll mark the missing pieces as 'N/A (Timeout)'.")
+            for field_id_timeout in fields:
+                if field_id_timeout not in invalid_fields:
+                    for year_timeout_val in range(start_year, end_year + 1):
+                        if year_timeout_val not in data.get(field_id_timeout, {}):
+                            data.setdefault(field_id_timeout, {})[year_timeout_val] = "N/A (Timeout)"
+            break
 
-        if time.time() - start_request_time > timeout:
-            print(f"[WARNING] Timeout waiting for response for {security} after {timeout}s.")
-            break # Exit loop on timeout
+        event = session.nextEvent(500)
 
         if event.eventType() == blpapi.Event.TIMEOUT:
-            print(f"[DEBUG] Bloomberg event timeout for {security}. Continuing to wait...")
+            print(f"🕰️ Bloomberg is taking a moment to respond for {security_for_request}. Still waiting...")
             continue
 
-        if event.eventType() in [blpapi.Event.RESPONSE, blpapi.Event.PARTIAL_RESPONSE]:
-            for msg in event:
-                # print(f"[DEBUG] Raw Bloomberg response message: {msg}") # Can be very verbose
+        for msg in event:
 
-                if msg.hasElement("responseError"):
-                    error = msg.getElement("responseError")
-                    error_message = error.getElement("message").getValueAsString()
-                    print(f"[ERROR] Bloomberg API error for {security}: {error_message}")
-                    # If responseError is present, it's likely a request-level issue, might affect all fields.
-                    return {field: {year: "N/A (Request Error)" for year in range(start_year, end_year + 1)} for field in fields}
+            if msg.hasElement("responseError"):
+                error = msg.getElement("responseError")
+                error_message = error.getElement("message").getValue()
+                print(f"❌ Error from Bloomberg for {security_for_request}: {error_message}. This might affect the data for the current request.")
+                for f_id_err in fields:
+                    if f_id_err not in invalid_fields: invalid_fields.append(f_id_err)
+                continue
 
+            if not msg.hasElement("securityData"):
+                print(f"🤔 Hmm, a message came from Bloomberg for {security_for_request}, but it's missing the main 'securityData' part. That's odd.")
+                continue
 
-                if not msg.hasElement("securityData"):
-                    print(f"[WARNING] No securityData element in response for {security}.")
+            security_data = msg.getElement("securityData")
+
+            if security_data.hasElement("securityError"):
+                sec_error = security_data.getElement("securityError")
+                error_msg_sec = sec_error.getElement("message").getValueAsString()
+                print(f"❌ Security Error from Bloomberg for '{security_data.getElementValue('security')}': {error_msg_sec}. This means I can't get data for this stock with the current fields.")
+                for f_id_sec_err in fields:
+                    if f_id_sec_err not in invalid_fields: invalid_fields.append(f_id_sec_err)
+                continue
+
+            if security_data.hasElement("fieldExceptions"):
+                field_exceptions = security_data.getElement("fieldExceptions")
+                for j in range(field_exceptions.numValues()):
+                    field_error = field_exceptions.getValue(j)
+                    invalid_field_id = field_error.getElement("fieldId").getValueAsString()
+                    error_info = field_error.getElement("errorInfo")
+                    error_message_field = error_info.getElement("message").getValueAsString()
+                    field_name_display = field_to_name_map.get(invalid_field_id, "Unknown Field (Not in my list)")
+                    print(f"⚠️ Problem with a specific field: '{invalid_field_id}' (which I know as '{field_name_display}') for {security_for_request}. Bloomberg says: {error_message_field}. I'll mark it as N/A.")
+                    if invalid_field_id not in invalid_fields:
+                        invalid_fields.append(invalid_field_id)
+
+            if not security_data.hasElement("fieldData"):
+                print(f"😕 No actual data ('fieldData') found in the message from Bloomberg for {security_for_request}. This can happen if all requested fields were invalid or there's no data for the chosen period.")
+                for f_id_no_data in fields:
+                    if f_id_no_data not in invalid_fields:
+                        for year_val_nd in range(start_year, end_year + 1):
+                            data.setdefault(f_id_no_data, {})[year_val_nd] = "N/A (No data found)"
+                continue
+
+            field_data_array = security_data.getElement("fieldData")
+            
+            for k in range(field_data_array.numValues()):
+                datum = field_data_array.getValue(k)
+                if not datum.hasElement("date"):
+                    print("🤔 One of the data entries from Bloomberg is missing a 'date'. Skipping this particular entry.")
                     continue
+                date_obj = datum.getElement("date").getValueAsDatetime()
+                year = date_obj.year
 
-                security_data = msg.getElement("securityData")
+                for field_id in fields:
+                    if field_id in invalid_fields:
+                        data.setdefault(field_id, {})[year] = "N/A (Invalid Field)"
+                        continue
 
-                if security_data.hasElement("fieldExceptions"):
-                    field_exceptions = security_data.getElement("fieldExceptions")
-                    for j in range(field_exceptions.numValues()):
-                        field_error = field_exceptions.getValueAsElement(j) # Use getValueAsElement
-                        invalid_field_id = field_error.getElement("fieldId").getValueAsString()
-                        error_info = field_error.getElement("errorInfo").getElement("message").getValueAsString()
-                        field_name_display = field_to_name_map.get(invalid_field_id, "Unknown Field")
-                        print(f"[WARNING] Invalid Bloomberg field: '{invalid_field_id}' (mapped to '{field_name_display}') for {security}. Error: {error_info}")
-                        if invalid_field_id not in invalid_fields_in_batch:
-                            invalid_fields_in_batch.append(invalid_field_id)
-
-                if not security_data.hasElement("fieldData"):
-                    print(f"[WARNING] No fieldData element in securityData for {security}.")
-                    continue
-
-                field_data_array = security_data.getElement("fieldData")
-                # print(f"[DEBUG] Number of fieldData entries for {security}: {field_data_array.numValues()}")
-
-                for k in range(field_data_array.numValues()):
-                    datum = field_data_array.getValueAsElement(k) # Use getValueAsElement
-                    date_obj = datum.getElement("date").getValueAsDatetime()
-                    year = date_obj.year
-                    # print(f"[DEBUG] Processing data for year {year} for {security}: {datum}") # Verbose
-
-                    for field_id in fields: # Iterate over fields requested in *this batch*
-                        if field_id in invalid_fields_in_batch:
-                            data[field_id][year] = "N/A (Invalid Field)"
-                            continue
-                        if datum.hasElement(field_id):
+                    if datum.hasElement(field_id):
+                        try:
+                            value = datum.getElement(field_id).getValueAsFloat()
+                            data.setdefault(field_id, {})[year] = value
+                        except blpapi.exception.ElementErrorException:
                             try:
-                                value = datum.getElement(field_id).getValueAsFloat()
-                                data[field_id][year] = value
-                                # print(f"[DEBUG] Fetched {field_id} for {year}: {value}") # Verbose
-                            except blpapi.exception.ElementErrorException:
-                                try: # Attempt to get as string if float fails
-                                    value_str = datum.getElement(field_id).getValueAsString()
-                                    data[field_id][year] = value_str
-                                    # print(f"[DEBUG] Field {field_id} for year {year} is not a float, stored as string: {value_str}") # Verbose
-                                except Exception as e_str:
-                                    print(f"[WARNING] Could not get value for field {field_id} for year {year}: {e_str}")
-                                    data[field_id][year] = "N/A (Error)"
-                        else:
-                            # Ensure year entry exists even if field is missing for that year in this datum
-                            if year not in data[field_id]:
-                                data[field_id][year] = None # Or "N/A (Missing)"
-                                # print(f"[DEBUG] No data for {field_id} in {year} in this specific datum entry.") # Verbose
+                                value_str = datum.getElement(field_id).getValueAsString()
+                                data.setdefault(field_id, {})[year] = value_str
+                                print(f"📝 Note: The data for field '{field_id}' for year {year} for {security_for_request} isn't a number. I've saved it as text: '{value_str}'")
+                            except Exception as e_str:
+                                print(f"⚠️ Couldn't get the value for field '{field_id}' for year {year} for {security_for_request}, even as text. Error: {e_str}. Marking as N/A.")
+                                data.setdefault(field_id, {})[year] = "N/A (Error reading)"
+                        except Exception as e_gen:
+                            print(f"⚠️ Error trying to read field '{field_id}' for year {year} for {security_for_request}: {e_gen}. Marking as N/A.")
+                            data.setdefault(field_id, {})[year] = "N/A (Conversion Error)"
+                    else:
+                        if year not in data.get(field_id, {}): 
+                            data.setdefault(field_id, {})[year] = None 
 
+        if event.eventType() == blpapi.Event.RESPONSE:
+            print(f"📬 Received the complete response from Bloomberg for this batch ({security_for_request}).")
+            for field_id_fill in fields:
+                if field_id_fill not in invalid_fields: 
+                    for year_fill_val in range(start_year, end_year + 1):
+                        if year_fill_val not in data.get(field_id_fill, {}): 
+                            data.setdefault(field_id_fill, {})[year_fill_val] = "N/A (Missing)"
+            break
 
         elif event.eventType() in [blpapi.Event.SESSION_STATUS, blpapi.Event.SERVICE_STATUS]:
             for msg in event:
                 if msg.messageType() == blpapi.Name("SessionTerminated"):
-                    print("[ERROR] Bloomberg session terminated unexpectedly.")
-                    # Potentially raise an exception or handle reconnection if this is critical
-                    return None # Indicates session failure
+                    print("❗CRITICAL: The Bloomberg session was terminated unexpectedly! Further data requests might fail.")
+                    return None 
+                print(f"ℹ️ Just an update from Bloomberg (Session/Service Status): {msg.toString().strip()}")
+        else:
+            print(f"🤖 Received an unusual event type from Bloomberg: {event.eventType()}. Message: {msg.toString().strip()}")
 
-        if event.eventType() == blpapi.Event.RESPONSE:
-            print(f"[INFO] Received final response for batch for {security}.")
-            break # Exit loop after final response
+    if not any(data.get(field) for field in data):
+        print(f"💨 It seems no data was successfully retrieved for any requested field for {ticker} in this batch.")
 
-    # Final check for fields that might not have received any data
-    for field_id in fields:
-        for year_chk in range(start_year, end_year + 1):
-            if year_chk not in data[field_id]:
-                data[field_id][year_chk] = "N/A (No Data)"
-                print(f"[DEBUG] Field {field_id} for {year_chk} for {security} had no data, marked N/A.")
+    if invalid_fields:
+        print(f"🚫 For {security_for_request}, these Bloomberg fields were skipped or marked N/A because of errors or invalidity: {invalid_fields}")
 
-
-    if not any(data[field] for field in data if data[field] and isinstance(data[field], dict)): # Check if any field got actual data
-        print(f"[WARNING] No data received for any requested field for {ticker} in this batch.")
-
-    if invalid_fields_in_batch:
-        print(f"[INFO] Bloomberg fields skipped or marked N/A due to invalidity for {security}: {invalid_fields_in_batch}")
-
-    # print(f"[DEBUG] Final fetched data for this batch: {data}") # Can be very large
     return data
 
+def calculate_derived_metrics(fetched_data, start_year, end_year):
+    derived_data = {}
+    
+    other_operating_components = [
+        "IS_OTHER_OPER_INC",  
+        "IS_OTHER_OPERATING_EXPENSES",
+        "IS_FOREIGN_EXCH_LOSS",
+        "INCOME_LOSS_FROM_AFFILIATES",
+        "IS_ABNORMAL_ITEM"
+        #"OTHER_NONOP_INCOME"
+    ]
 
-def calculate_derived_metrics(data, start_year=2014, end_year=2024):
-    """Calculate derived metrics like DSO."""
-    derived = {
-        "DSO": {}
-    }
-
-    def get_val(source_field_code, year, default=0.0): # Ensure float for calculations
-        val = data.get(source_field_code, {}).get(year)
-        if isinstance(val, (int, float)):
-            return float(val)
-        # Try to convert if string representation of number
-        if isinstance(val, str):
-            try:
-                return float(val)
-            except ValueError:
-                pass # Fall through to default if conversion fails
-        return default
-
-
+    derived_data["Total_Other_Operating"] = {}
+    
     for year in range(start_year, end_year + 1):
-        revenue = get_val("SALES_REV_TURN", year)
-        ar = get_val("BS_ACCT_NOTE_RCV", year) # Accounts Receivable
-        derived["DSO"][year] = (ar / revenue * 365) if revenue != 0 else 0.0 # Avoid division by zero
+        total_other = 0
+        has_value = False
+        
+        for field in other_operating_components:
+            if field in fetched_data and year in fetched_data[field]:
+                value = fetched_data[field].get(year)
+                if isinstance(value, (int, float)):
+                    total_other += value
+                    has_value = True
+        
+        
+        if has_value:
+            derived_data["Total_Other_Operating"][year] = total_other
+        else:
+            derived_data["Total_Other_Operating"][year] = "N/A (Missing Components)"
 
-    return derived
+    return derived_data
 
-# --- FIELD MAP (Keep as is) ---
 field_map = {
-    # Income Statement (IS)
     "Revenue (Sales)": {"source": "BDH", "field": "SALES_REV_TURN", "statement": "IS"},
     "COGS (Cost of Goods Sold)": {"source": "BDH", "field": "IS_COG_AND_SERVICES_SOLD", "statement": "IS"},
     "Gross Profit": {"source": "BDH", "field": "GROSS_PROFIT", "statement": "IS"},
@@ -208,7 +256,7 @@ field_map = {
     "R&D (Research & Development)": {"source": "BDH", "field": "IS_OPERATING_EXPENSES_RD", "statement": "IS"},
     "Other Operating (Income) Expenses": {"source": "BDH", "field": "IS_OTHER_OPER_INC", "statement": "IS"},
     "EBITDA": {"source": "BDH", "field": "EBITDA", "statement": "IS"},
-    "D&A (Depreciation & Amortization)": {"source": "BDH", "field": "ARDR_DEPRECIATION_AMORTIZATION", "statement": "IS"},
+    "D&A (Depreciation & Amortization)": {"source": "BDH", "field": "CF_DEPR_AMORT", "statement": "CF"},
     "Depreciation Expense": {"source": "BDH", "field": "ARDR_DEPRECIATION_EXP", "statement": "IS"},
     "Amortization Expense": {"source": "BDH", "field": "ARDR_AMORT_EXP", "statement": "IS"},
     "Operating Income (EBIT)": {"source": "BDH", "field": "IS_OPER_INC", "statement": "IS"},
@@ -224,8 +272,8 @@ field_map = {
     "EPS Diluted": {"source": "BDH", "field": "DILUTED_EPS", "statement": "IS"},
     "Basic Weighted Average Shares": {"source": "BDH", "field": "IS_AVG_NUM_SH_FOR_EPS", "statement": "IS"},
     "Diluted Weighted Average Shares": {"source": "BDH", "field": "IS_SH_FOR_DILUTED_EPS", "statement": "IS"},
+    "Total Other Operating Components": {"source": "derived", "field": "Total_Other_Operating", "statement": "IS"},
 
-    # Balance Sheet (BS)
     "Cash & Cash Equivalents": {"source": "BDH", "field": "BS_CASH_NEAR_CASH_ITEM", "statement": "BS"},
     "Short-Term Investments": {"source": "BDH", "field": "BS_MKT_SEC_OTHER_ST_INVEST", "statement": "BS"},
     "Accounts Receivable": {"source": "BDH", "field": "BS_ACCT_NOTE_RCV", "statement": "BS"},
@@ -244,13 +292,13 @@ field_map = {
     "Long-Term Operating Lease Liabilities": {"source": "BDH", "field": "LT_CAPITALIZED_LEASE_LIABILITIES", "statement": "BS"},
     "Non-Current Liabilities": {"source": "BDH", "field": "NON_CUR_LIAB", "statement": "BS"},
     "Non-Controlling Interest": {"source": "BDH", "field": "MINORITY_NONCONTROLLING_INTEREST", "statement": "BS"},
+    "Right-of-Use Assets": {"source": "BDH", "field": "TOT_OPER_LEA_RT_OF_USE_ASSETS", "statement": "BS"},
 
-    # Cash Flow Statement (CF)
     "(Increase) Decrease in Accounts Receivable": {"source": "BDH", "field": "CF_ACCT_RCV_UNBILLED_REV", "statement": "CF", "section": "Operating"},
     "(Increase) Decrease in Inventories": {"source": "BDH", "field": "CF_CHANGE_IN_INVENTORIES", "statement": "CF", "section": "Operating"},
-    "(Increase) Decrease in Pre-paid expeses and Other CA": {"source": "BDH", "field": "CF_CHANGE_IN_PREPAID_EXP", "statement": "CF", "section": "Operating"}, # Changed field
+    "(Increase) Decrease in Pre-paid expeses and Other CA": {"source": "BDH", "field": "CF_ACCT_RCV_UNBILLED_REV", "statement": "CF", "section": "Operating"},
     "Increase (Decrease) in Accounts Payable": {"source": "BDH", "field": "CF_CHANGE_IN_ACCOUNTS_PAYABLE", "statement": "CF", "section": "Operating"},
-    "Increase (Decrease) in Accrued Revenues and Other CL": {"source": "BDH", "field": "CF_CHANGE_IN_ACCRUED_LIABILITY", "statement": "CF", "section": "Operating"}, # Changed field
+    "Increase (Decrease) in Accrued Revenues and Other CL": {"source": "BDH", "field": "CF_ACCT_RCV_UNBILLED_REV", "statement": "CF", "section": "Operating"},
     "Stock Based Compensation": {"source": "BDH", "field": "CF_STOCK_BASED_COMPENSATION", "statement": "CF", "section": "Operating"},
     "Operating Cash Flow": {"source": "BDH", "field": "CF_CASH_FROM_OPER", "statement": "CF", "section": "Operating"},
     "Acquisition of Fixed & Intangibles": {"source": "BDH", "field": "ACQUIS_OF_FIXED_INTANG", "statement": "CF", "section": "Investing"},
@@ -260,41 +308,28 @@ field_map = {
     "Increase in LT Investment": {"source": "BDH", "field": "CF_INCR_INVEST", "statement": "CF", "section": "Investing"},
     "Decrease in LT Investment": {"source": "BDH", "field": "CF_DECR_INVEST", "statement": "CF", "section": "Investing"},
     "Investing Cash Flow": {"source": "BDH", "field": "CF_CASH_FROM_INV_ACT", "statement": "CF", "section": "Investing"},
+    "Lease Payments": {"source": "BDH", "field": "ARDR_REPAYMENT_FINANCE_LEASES", "statement": "CF", "section": "Financing"},
     "Debt Borrowing": {"source": "BDH", "field": "CF_LT_DEBT_CAP_LEAS_PROCEEDS", "statement": "CF", "section": "Financing"},
     "Debt Repayment": {"source": "BDH", "field": "CF_LT_DEBT_CAP_LEAS_PAYMENT", "statement": "CF", "section": "Financing"},
     "Dividends": {"source": "BDH", "field": "CF_DVD_PAID", "statement": "CF", "section": "Financing"},
     "Increase (Repurchase) of Shares": {"source": "BDH", "field": "PROC_FR_REPURCH_EQTY_DETAILED", "statement": "CF", "section": "Financing"},
     "Financing Cash Flow": {"source": "BDH", "field": "CFF_ACTIVITIES_DETAILED", "statement": "CF", "section": "Financing"},
     "Effect of Foreign Exchange": {"source": "BDH", "field": "CF_EFFECT_FOREIGN_EXCHANGES", "statement": "CF", "section": "All"},
+    #"Net Changes in Cash": {"source": "BDH", "field": "CF_NET_CHNG_CASH", "statement": "CF", "section": "All"},
 
-    # Additional Fields (BS)
     "Market Capitalization": {"source": "BDH", "field": "CUR_MKT_CAP", "statement": "BS"},
     "Total Debt": {"source": "BDH", "field": "SHORT_AND_LONG_TERM_DEBT", "statement": "BS"},
     "Preferred Stock": {"source": "BDH", "field": "PFD_EQTY_HYBRID_CAPITAL", "statement": "BS"},
     "Enterprise Value": {"source": "BDH", "field": "ENTERPRISE_VALUE", "statement": "BS"},
-    "Total Borrowings": {"source": "BDH", "field": "TOT_BORROWINGS", "statement": "BS"},
-    "Total Leases": {"source": "BDH", "field": "TOT_LEASE_LIAB", "statement": "BS"},
-    "Net Debt": {"source": "BDH", "field": "NET_DEBT", "statement": "BS"},
-    "Effective Tax Rate": {"source": "BDH", "field": "EFF_TAX_RATE", "statement": "BS"},
-
-    # Derived Metrics
-    "Changes in Net Working Capital": {"source": "derived", "field": "Changes in Net Working Capital", "statement": "BS"}, # Usually a CF item, but calculated from BS
-    "DSO": {"source": "derived", "field": "DSO", "statement": "IS"}, # Calculated from IS (Revenue) and BS (AR)
-    "DIH": {"source": "derived", "field": "DIH", "statement": "BS"}, # Days Inventory Held
-    "DPO": {"source": "derived", "field": "DPO", "statement": "BS"}, # Days Payable Outstanding
-    "Net Cash from Investments & Acquisitions": {"source": "derived", "field": "Net Cash from Investments & Acquisitions", "statement": "CF", "section": "Investing"},
-    "Increase (Decrease) in Other": {"source": "derived", "field": "Increase (Decrease) in Other", "statement": "CF", "section": "Operating"},
 }
 
-# --- field_cell_map (Keep as is) ---
 field_cell_map = {
-    # Income Statement (IS)
     "Revenue (Sales)": "G6",
     "COGS (Cost of Goods Sold)": "G7",
     "Gross Profit": "G8",
     "SG&A (Selling, General & Administrative)": "G9",
     "R&D (Research & Development)": "G10",
-    "Other Operating (Income) Expenses": "G11",
+    "Total Other Operating Components": "G11",
     "EBITDA": "G12",
     "D&A (Depreciation & Amortization)": "G13",
     "Depreciation Expense": "G14",
@@ -313,7 +348,6 @@ field_cell_map = {
     "Basic Weighted Average Shares": "G27",
     "Diluted Weighted Average Shares": "G28",
 
-    # Balance Sheet (BS)
     "Cash & Cash Equivalents": "G33",
     "Short-Term Investments": "G34",
     "Accounts Receivable": "G35",
@@ -321,19 +355,19 @@ field_cell_map = {
     "Current Assets": "G38",
     "Gross PP&E (Property, Plant and Equipment)": "G40",
     "Accumulated Depreciation": "G41",
+    "Right-of-Use Assets": "G42",
     "Intangibles": "G43",
     "Goodwill": "G44",
     "Non-Current Assets": "G47",
     "Accounts Payable": "G49",
     "Short-Term Borrowings": "G51",
     "Current Portion of Lease Liabilities": "G52",
-    "Current Liabilities": "G54",
+    "Current Liabilities": "G54", 
     "Long-Term Borrowings": "G56",
     "Long-Term Operating Lease Liabilities": "G57",
-    "Non-Current Liabilities": "G59",
-    "Non-Controlling Interest": "G62", # Already present, kept for consistency
+    "Non-Current Liabilities": "G59", 
+    "Non-Controlling Interest": "G62",
 
-    # Cash Flow Statement (CF)
     "(Increase) Decrease in Accounts Receivable": "G69",
     "(Increase) Decrease in Inventories": "G70",
     "(Increase) Decrease in Pre-paid expeses and Other CA": "G71",
@@ -342,93 +376,64 @@ field_cell_map = {
     "Stock Based Compensation": "G74",
     "Operating Cash Flow": "G76",
     "Acquisition of Fixed & Intangibles": "G78",
-    "Disposal of Fixed & Intangibles": "G79",
+    "Disposal of Fixed & Intangibles": "G79", 
     "Acquisitions": "G81",
     "Divestitures": "G82",
     "Increase in LT Investment": "G83",
     "Decrease in LT Investment": "G84",
     "Investing Cash Flow": "G86",
-    "Debt Borrowing": "G87", # Note: Changed from "G87" which was duplicated. This might need checking with template. Assuming G87 is Debt Borrowing.
-    "Debt Repayment": "G88",
+    "Lease Payments": "G89",
+    "Debt Borrowing": "G87", 
+    "Debt Repayment": "G88", 
     "Dividends": "G90",
     "Increase (Repurchase) of Shares": "G91",
     "Financing Cash Flow": "G93",
     "Effect of Foreign Exchange": "G94",
+    #"Net Changes in Cash": "G95",
 
-    # Additional Fields (BS) - Note: some like Non-Controlling Interest are repeated, ensure template matches
     "Market Capitalization": "G99",
     "Total Debt": "G101",
     "Preferred Stock": "G102",
-    # "Non-Controlling Interest": "G103", # This is also G62, check template if it's distinct or repeated
     "Enterprise Value": "G104",
-    "Total Borrowings": "G100", # Assuming G100 based on typical order, was G96 previously
-    "Total Leases": "G105", # Example, was G116
-    "Net Debt": "G106", # Example, was G98
-    "Effective Tax Rate": "G107", # Example, was G99
-
-    # Derived Metrics (cells are usually where these are displayed/calculated in Excel, not direct inputs)
-    "DSO": "G101", # This cell in your template is for the calculated DSO.
-    # Other derived metrics usually have their own cells if displayed.
-    # "Changes in Net Working Capital": "G100", # Often calculated within CF section or derived separately
-    # "DIH": "G102",
-    # "DPO": "G103",
-    # "Net Cash from Investments & Acquisitions": "G82", # Could be sum of items in CF investing
-    # "Increase (Decrease) in Other": "G72", # Could be a plug in CF operating
 }
 
 
-def filter_field_map_for_task(task_name, field_map_dict):
-    """Filters the field_map for a specific task (e.g., 'IS', 'BS')."""
-    statement_code, _ = task_name.split("_") if "_" in task_name else (task_name, None)
+def filter_field_map_for_task(task_name, current_field_map):
+    statement_code = task_name
 
-    allowed_statements = ["IS", "BS", "CF", "All"] # 'All' could be for meta/market data
+    allowed_statements = ["IS", "BS", "CF"]
     if statement_code not in allowed_statements:
-        raise ValueError(f"Invalid statement code '{statement_code}'. Must be one of {allowed_statements}.")
+        raise ValueError(f"Error: Invalid statement code '{statement_code}'. Must be one of {allowed_statements}.")
 
-    task_specific_fields = {}
-    for name, config in field_map_dict.items():
-        if config["statement"] == statement_code or config["statement"] == "All": # Include 'All' statement fields
-            task_specific_fields[name] = config
-    
-    # Logic for including dependencies for derived fields (if any derived fields were part of the task)
-    required_bdh_for_derived = set()
-    for name, config in task_specific_fields.items():
-        if config["source"] == "derived":
-            # Example: if DSO needs Revenue and AR
-            if name == "DSO":
-                required_bdh_for_derived.update(["BS_ACCT_NOTE_RCV", "SALES_REV_TURN"])
-            # Add more derived field dependencies here
-    
-    # Add these required BDH fields to the task if not already present
-    for bdh_field_code in required_bdh_for_derived:
-        found = any(c.get("field") == bdh_field_code and c.get("source") == "BDH" for c in task_specific_fields.values())
-        if not found:
-            # Find the global config for this BDH field and add it
-            for global_name, global_config in field_map_dict.items():
-                if global_config.get("field") == bdh_field_code and global_config.get("source") == "BDH":
-                    # Add with a special prefix or flag if you need to distinguish these auto-added dependencies
-                    task_specific_fields[f"__dep_{global_name}"] = global_config
-                    break
-    return task_specific_fields
+    task_specific_configs = {}
+    for name, config in current_field_map.items():
+        if config["statement"] == statement_code:
+            task_specific_configs[name] = config
+
+    required_bdh_for_derived_metrics = set()
+
+    for bdh_field_code_needed in required_bdh_for_derived_metrics:
+        found_in_task = False
+        for _, existing_config in task_specific_configs.items():
+            if existing_config.get("field") == bdh_field_code_needed and existing_config.get("source") == "BDH":
+                found_in_task = True
+                break
+        if not found_in_task:
+            pass
+    return task_specific_configs
 
 
 def batch_fields(fields_to_fetch, batch_size=25):
-    """Split fields into batches of batch_size or fewer."""
-    unique_fields = sorted(list(set(fields_to_fetch))) # Ensure unique fields
+    unique_fields = sorted(list(set(fields_to_fetch))) 
     return [unique_fields[i:i + batch_size] for i in range(0, len(unique_fields), batch_size)]
 
 def get_column_letter_from_index(col_index):
-    """Convert 1-based column index to letter (e.g., 7 -> G)."""
     return openpyxl.utils.get_column_letter(col_index)
 
 def get_target_cells_for_years(base_cell_ref, num_years):
-    """Get list of cell references for a row, for num_years, starting from base_cell_ref."""
     try:
         col_str = "".join(filter(str.isalpha, base_cell_ref))
-        row_num_str = "".join(filter(str.isdigit, base_cell_ref))
-        if not col_str or not row_num_str: # Basic validation
-            raise ValueError(f"Invalid cell reference format: {base_cell_ref}")
-        row_num = int(row_num_str)
+        row_num = int("".join(filter(str.isdigit, base_cell_ref)))
         start_col_idx = openpyxl.utils.column_index_from_string(col_str)
 
         target_cells = []
@@ -437,170 +442,206 @@ def get_target_cells_for_years(base_cell_ref, num_years):
             target_cells.append(f"{target_col_letter}{row_num}")
         return target_cells
     except ValueError as e:
-        print(f"[ERROR] Invalid base cell reference '{base_cell_ref}': {e}")
-        raise # Re-raise to be handled by the caller or stop execution
+        print(f"❌ Error: The cell reference '{base_cell_ref}' looks wrong. Could not figure out the column and row: {e}")
+        raise 
 
-
-def populate_valuation_model(template_path, output_directory, ticker_symbol_from_web):
-    """Populate the 'Inputs' sheet with data for all statements in a single file."""
+def populate_valuation_model(template_path, output_path, ticker_symbol, current_field_map, current_field_cell_map):
     if not os.path.exists(template_path):
-        print(f"[ERROR] Template file '{template_path}' not found.")
-        raise FileNotFoundError(f"Template file '{template_path}' not found.")
+        print(f"❌ Oh no! The Excel template file '{template_path}' wasn't found. Please make sure it's in the same directory as the script or you've provided the full path.")
+        raise FileNotFoundError(f"Template file {template_path} not found.")
 
-    # Sanitize ticker_symbol_from_web for use in filenames
-    safe_ticker_name = ticker_symbol_from_web.replace(" ", "_").replace("/", "_").replace(":", "_")
-    output_file_name = f"{safe_ticker_name}_Valuation_Model_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-    final_output_path = os.path.join(output_directory, output_file_name)
+    try:
+        shutil.copy(template_path, output_path)
+        print(f"📄 Copied the template '{template_path}' to your new output file '{output_path}'.")
+    except Exception as e_copy:
+        print(f"❌ Failed to copy the template to '{output_path}'. Error: {e_copy}")
+        raise
 
-    os.makedirs(output_directory, exist_ok=True) # Ensure output directory exists
+    try:
+        wb = openpyxl.load_workbook(output_path)
+    except Exception as e_load:
+        print(f"❌ Trouble opening the new Excel file '{output_path}'. Error: {e_load}")
+        raise
 
-    shutil.copy(template_path, final_output_path)
-    print(f"[INFO] Copied template '{template_path}' to output file '{final_output_path}'.")
-
-    wb = openpyxl.load_workbook(final_output_path)
+    try:
+        if "DCF" in wb.sheetnames:
+            dcf_sheet = wb["DCF"]
+            dcf_sheet["R4"] = ticker_symbol 
+            print(f"📝 Ticker '{ticker_symbol}' written to cell R4 of 'DCF' sheet.")
+        else:
+            print(f"⚠️ Sheet 'DCF' not found in the workbook '{output_path}'. Ticker '{ticker_symbol}' NOT written to cell R4.")
+    except Exception as e:
+        print("An erroe occured with the message: ", e)
+            
     if "Inputs" not in wb.sheetnames:
-        print("[ERROR] 'Inputs' sheet not found in the workbook.")
+        print("❌ The Excel template is missing the 'Inputs' sheet. I need that sheet to put the data in! Please check the template.")
         raise ValueError("'Inputs' sheet not found in the template file.")
     ws = wb["Inputs"]
 
-    # Define years for data fetching and Excel population
-    data_years = list(range(2014, 2025)) # For years 2014 through 2024 inclusive
+    data_years = list(range(2014, 2024 + 1))
+    num_data_years = len(data_years)
 
-    # Global dictionary to store all fetched BDH data to avoid redundant calls
-    all_fetched_bdh_data = {}
-    # Map Bloomberg field codes back to human-readable names for error reporting
-    global_bberg_code_to_name_map = {
+    all_fetched_bdh_data = {} 
+
+    global_bberg_code_to_excel_name_map = {
         config["field"]: name
-        for name, config in field_map.items()
-        if config["source"] == "BDH" and "field" in config
+        for name, config in current_field_map.items()
+        if config.get("source") == "BDH" and "field" in config
     }
 
-    print(f"\n[PHASE] Starting data fetching for ticker: {ticker_symbol_from_web}")
+    all_bdh_fields_to_fetch_codes = set()
+    for excel_name, config in current_field_map.items():
+        if config.get("source") == "BDH" and "field" in config:
+            all_bdh_fields_to_fetch_codes.add(config["field"])
+        elif config.get("source") == "derived": 
+            pass
 
-    # Collect all unique BDH fields needed across all tasks
-    all_required_bdh_codes = set()
-    for task_name_iter in ["IS", "BS", "CF"]: # Iterate through main statements
-        current_task_field_configs_iter = filter_field_map_for_task(task_name_iter, field_map)
-        for name, config in current_task_field_configs_iter.items():
-            if config["source"] == "BDH" and "field" in config:
-                all_required_bdh_codes.add(config["field"])
-    
-    print(f"[INFO] Total unique Bloomberg fields to fetch: {len(all_required_bdh_codes)}")
 
-    # Fetch all BDH data in batches
-    field_batches = batch_fields(list(all_required_bdh_codes))
+    if not all_bdh_fields_to_fetch_codes:
+        print("🤔 It seems no Bloomberg data fields (BDH fields) are listed in the configuration. I can't fetch anything without them. Please check the 'field_map'.")
+        wb.save(output_path) 
+        return
 
-    session = None # Initialize session outside the loop
+    print(f"\n🚀 Phase 1: Starting data hunt for ticker: {ticker_symbol}")
+    print(f"📊 I need to find {len(all_bdh_fields_to_fetch_codes)} unique pieces of data from Bloomberg.")
+
+    field_batches = batch_fields(list(all_bdh_fields_to_fetch_codes), batch_size=25)
+    print(f"📦 I've split this into {len(field_batches)} smaller batches to ask Bloomberg.")
+
+    session = None 
     try:
-        session = setup_bloomberg_session(ticker_symbol_from_web)
+        session = setup_bloomberg_session(ticker_symbol)
         if not session:
+            print(f"❌ Major setback: Failed to start the Bloomberg session for {ticker_symbol}. I can't fetch any data. Please check your Bloomberg Terminal connection.")
+            
             raise ConnectionError("Failed to establish Bloomberg session.")
 
-        for batch_idx, current_batch_fields in enumerate(field_batches):
-            print(f"  [BATCH {batch_idx + 1}/{len(field_batches)}] Fetching {len(current_batch_fields)} fields...")
-            
+        for batch_idx, current_batch_bberg_codes in enumerate(field_batches):
+            print(f"    🔎 Batch {batch_idx + 1} of {len(field_batches)}: Asking for {len(current_batch_bberg_codes)} specific items.")
+
             batch_data_fetched = fetch_bloomberg_data(
-                session, ticker_symbol_from_web, current_batch_fields,
-                global_bberg_code_to_name_map, start_year=min(data_years), end_year=max(data_years)
+                session,
+                ticker_symbol,
+                current_batch_bberg_codes,
+                global_bberg_code_to_excel_name_map,
+                start_year=data_years[0],
+                end_year=data_years[-1]
             )
 
-            if batch_data_fetched: # Check if data was fetched
+            if batch_data_fetched is None: 
+                print(f"    ❗ Critical Error: Something went wrong with the Bloomberg connection during batch {batch_idx + 1}. Stopping further data fetching.")
+                raise ConnectionAbortedError("Bloomberg session terminated or critical fetch error during a batch.")
+
+
+            elif batch_data_fetched: 
                 for field_code, yearly_data in batch_data_fetched.items():
                     if field_code not in all_fetched_bdh_data:
                         all_fetched_bdh_data[field_code] = {}
-                    # Merge yearly data, preferring new data if there's overlap (though should be unique)
-                    all_fetched_bdh_data[field_code].update(yearly_data)
-            else:
-                print(f"    [WARNING] Batch {batch_idx + 1} returned no data.")
-            
-            # Optional: Add a small delay between batches if hitting rate limits, though session should handle some.
-            # time.sleep(1) # Example: 1-second delay
+                    for year, value in yearly_data.items():
+                        if value is not None:
+                            all_fetched_bdh_data[field_code][year] = value
+                        elif year not in all_fetched_bdh_data[field_code]:
+                            all_fetched_bdh_data[field_code][year] = value 
 
-    except ConnectionError as ce:
-        print(f"[CRITICAL] Bloomberg Connection Error: {ce}")
-        # Potentially re-raise or handle as a failure for the web app
-        if session: session.stop()
-        return None # Indicate failure
-    except Exception as e:
-        print(f"[CRITICAL] Error during data fetching: {e}")
-        traceback.print_exc()
-        if session: session.stop()
-        return None # Indicate failure
+                print(f"    👍 Success! Got data for batch {batch_idx + 1}. Processed {len(batch_data_fetched)} field types from this batch.")
+            else:
+                print(f"    ℹ️ Batch {batch_idx + 1} didn't return any data. This could be because all fields in it were invalid or no data was available.")
+
+    except ConnectionError as e_conn_err: 
+        print(f"❌ Connection Error: {e_conn_err}")
+    except ConnectionAbortedError as e_conn_abort: 
+        print(f"❌ Connection Aborted: {e_conn_abort}")
+    except Exception as e_fetch:
+        print(f"❌ An unexpected error occurred while trying to get data from Bloomberg: {e_fetch}")
+
     finally:
         if session:
-            session.stop()
-            print("[INFO] Bloomberg session stopped after fetching all batches.")
+            try:
+                session.stop()
+                print("🔌 Bloomberg session stopped. All done with data fetching (or tried our best!).")
+            except Exception as e_stop:
+                print(f"⚠️ Minor issue while trying to stop the Bloomberg session: {e_stop}")
 
+    print(f"\n🏁 Phase 1 Complete: Finished all attempts to fetch data from Bloomberg.")
 
-    print(f"\n[PHASE] Completed all data fetching.")
-    # print(f"[DEBUG] All fetched BDH data keys: {list(all_fetched_bdh_data.keys())}")
+    print(f"\n🧮 Phase 2: Calculating any extra metrics (like DSO)...")
+    all_derived_data = calculate_derived_metrics(all_fetched_bdh_data, start_year=data_years[0], end_year=data_years[-1])
+    print("✅ Derived metrics calculated (if any were defined).")
 
+    print(f"\n✍️ Phase 3: Writing all the gathered data into your Excel sheet: '{ws.title}'...")
 
-    print(f"\n[PHASE] Calculating derived metrics...")
-    all_derived_data = calculate_derived_metrics(all_fetched_bdh_data, start_year=min(data_years), end_year=max(data_years))
-    print("[INFO] Derived metrics calculated.")
-
-    print(f"\n[PHASE] Writing all data to Excel sheet '{ws.title}'...")
-
-    for item_name, config in field_map.items():
-        if item_name.startswith("__dep_"): # Skip auto-added dependency fields for direct Excel writing
+    for excel_name, config in current_field_map.items():
+        if excel_name.startswith("__dep_"): 
             continue
 
-        base_cell_ref = field_cell_map.get(item_name)
+        base_cell_ref = current_field_cell_map.get(excel_name)
         if not base_cell_ref:
-            # print(f"  [SKIP] No cell mapping for item: {item_name}") # Optional: for debugging missing mappings
+            print(f"🤔 Couldn't find where to put '{excel_name}' in the Excel sheet (no cell mapping). Skipping this item.")
             continue
 
         try:
-            target_cells_for_item = get_target_cells_for_years(base_cell_ref, len(data_years))
-        except ValueError as e:
-            print(f"  [ERROR] Skipping item '{item_name}' due to cell reference error: {e}")
+            target_cells_for_item = get_target_cells_for_years(base_cell_ref, num_data_years)
+        except Exception as e_cell_calc:
+            print(f"❌ Error figuring out the cells for '{excel_name}' (starting from '{base_cell_ref}'): {e_cell_calc}. Skipping this one.")
             continue
 
+        data_source_for_item = {}
+        source_type = config.get("source", "unknown").upper()
 
-        for i, year_to_populate in enumerate(data_years):
-            cell_ref_to_write = target_cells_for_item[i]
-            value_to_write = 0.0 # Default to 0.0 for numbers
-
-            if config["source"] == "BDH":
-                bberg_field_code = config.get("field")
-                if bberg_field_code:
-                    data_source_for_item = all_fetched_bdh_data.get(bberg_field_code, {})
-                    raw_value = data_source_for_item.get(year_to_populate)
-
-                    if isinstance(raw_value, (int, float)):
-                        value_to_write = float(raw_value)
-                    elif isinstance(raw_value, str) and "N/A" in raw_value:
-                        value_to_write = raw_value # Keep N/A as string
-                    else: # Includes None or other unexpected types
-                        value_to_write = 0.0 # Default for missing/unparseable BDH data
-                        # print(f"  [DEBUG] BDH default for {item_name} ({bberg_field_code}) year {year_to_populate} = 0.0 (raw: {raw_value})")
+        if source_type == "BDH":
+            bberg_field_code = config.get("field")
+            if not bberg_field_code:
+                print(f"🤔 The item '{excel_name}' is marked as Bloomberg data (BDH), but has no Bloomberg field code. Skipping.")
+                continue
+            data_source_for_item = all_fetched_bdh_data.get(bberg_field_code, {})
+            if not data_source_for_item:
+                print(f"💨 No data was fetched for '{excel_name}' (Bloomberg code: {bberg_field_code}). It will be marked N/A.")
 
 
-            elif config["source"] == "derived":
-                derived_field_name = config.get("field")
-                if derived_field_name:
-                    data_source_for_item = all_derived_data.get(derived_field_name, {})
-                    value = data_source_for_item.get(year_to_populate)
-                    if isinstance(value, (int, float)):
-                        value_to_write = float(value)
-                    else: # Includes None or other unexpected types
-                        value_to_write = 0.0 # Default for missing/unparseable derived data
-                        # print(f"  [DEBUG] Derived default for {item_name} ({derived_field_name}) year {year_to_populate} = 0.0 (raw: {value})")
+        elif source_type == "DERIVED":
+            derived_field_key = config.get("field") 
+            if not derived_field_key:
+                print(f"🤔 The item '{excel_name}' is marked as 'derived', but I don't know which calculation it refers to. Skipping.")
+                continue
+            data_source_for_item = all_derived_data.get(derived_field_key, {})
+            if not data_source_for_item:
+                print(f"💨 No data was calculated for the derived metric '{excel_name}'. It will be marked N/A (likely due to missing inputs).")
 
-            # Write to cell
-            ws[cell_ref_to_write] = value_to_write
-            # Apply number formatting if it's a number
-            if isinstance(value_to_write, float):
-                if "DSO" in item_name or "DIH" in item_name or "DPO" in item_name: # Specific format for day counts
-                    ws[cell_ref_to_write].number_format = "0.0"
-                else: # General number format
-                    ws[cell_ref_to_write].number_format = '_(* #,##0.000_);_(* (#,##0.000);_(* "-"??_);_(@_)'
+        else:
+            print(f"❓ Item '{excel_name}' has an unknown data source type: '{config.get('source', 'Not Specified')}'. Skipping.")
+            continue
+
+        for i, year in enumerate(data_years):
+            cell_ref = target_cells_for_item[i]
+            raw_value = data_source_for_item.get(year)
+
+            display_value = raw_value 
+            #skibidi toilet
+            
+            if raw_value is None: 
+                display_value = "0" 
+
+            try:
+                if isinstance(raw_value, (int, float)):
+                    ws[cell_ref] = raw_value
+                    ws[cell_ref].number_format = "#,##0.000" 
+                    if "EPS" in excel_name or "DSO" in excel_name or "Rate" in excel_name: 
+                        ws[cell_ref].number_format = "0.00"
+                elif isinstance(raw_value, str): 
+                    ws[cell_ref] = raw_value
+                else: 
+                    ws[cell_ref] = "0" if raw_value is None else str(raw_value) 
+            except Exception as e_write_cell:
+                print(f"⚠️ Problem writing to cell {cell_ref} for '{excel_name}': {e_write_cell}")
+                ws[cell_ref] = "Error writing"
 
 
-    wb.save(final_output_path)
-    print(f"\n[SUCCESS] Valuation model populated and saved to '{final_output_path}'")
-    return final_output_path
+    try:
+        wb.save(output_path)
+        print(f"\n🎉 All Done! Your valuation model has been populated and saved to: '{output_path}'")
+    except Exception as e_save:
+        print(f"❌ Critical Error: Failed to save the final Excel workbook to '{output_path}'. Error: {e_save}")
+        print("    Possible reasons: The file might be open in Excel, or there might be a permissions issue with the folder.")
 
 
 if __name__ == "__main__":
