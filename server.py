@@ -106,20 +106,33 @@ def news_page():
 
     username = session.get('username')
     user_id = session['user_id']
-    
     watchlist_tickers = get_user_watchlist_tickers(user_id)
-    
-    # Initial articles to load:
-    # If watchlist is empty, load general news.
-    # Otherwise, can load watchlist news by default (or general, your choice)
-    # The frontend will then use AJAX to switch if needed.
-    
-    # For the initial load, let's not fetch here to keep it simple.
-    # The frontend will make an AJAX call to /api/news_articles to load initial news.
-    
-    return render_template('news.html',
-                           username=username,
-                           has_watchlist=bool(watchlist_tickers))
+    return render_template('news.html', username=username, has_watchlist=bool(watchlist_tickers), watchlist=watchlist_tickers)
+
+@app.route('/api/news_search')
+def api_news_search():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+    ticker = request.args.get('ticker', '').strip().upper()
+    if not ticker:
+        return jsonify({'error': 'No ticker provided'}), 400
+    news = []
+    try:
+        news_response = newsapi.get_everything(q=ticker, language='en', sort_by='publishedAt', page_size=10)
+        if news_response.get('status') == 'ok':
+            for article in news_response.get('articles', []):
+                news.append({
+                    'title': article.get('title'),
+                    'url': article.get('url'),
+                    'published_at': article.get('publishedAt', '')[:10],
+                    'source': article.get('source', {}).get('name', ''),
+                    'sentiment_score': None
+                })
+    except Exception as e:
+        news = []
+    # Also return if ticker is in user's watchlist
+    in_watchlist = ticker in get_user_watchlist_tickers(session['user_id'])
+    return jsonify({'news': news, 'in_watchlist': in_watchlist})
 
 @app.route('/api/news_articles')
 def api_news_articles():
@@ -814,8 +827,52 @@ def view_analysis(analysis_id):
         return "Analysis not found or access denied", 404
     
     analysis_data = json.loads(analysis['analysis_data'])
-    return render_template('analysis.html', analysis=analysis_data, symbol=analysis_data['symbol'], user_action=analysis['user_action'], analysis_id=analysis_id)
+    user_action = analysis['user_action']
 
+    # Detect Inputs_Cur analysis by type or known fields
+    if analysis_data.get('type') == 'Inputs_Cur_Analysis' or 'download_link' in analysis_data or 'excel_path' in analysis_data:
+        # Try to get the Excel file path
+        excel_path = analysis_data.get('excel_path') or analysis_data.get('download_link')
+        if not excel_path and 'file' in analysis_data:
+            excel_path = analysis_data['file']
+        # If the path is relative to static, ensure it uses forward slashes
+        if excel_path:
+            excel_path = excel_path.replace('\\', '/')
+            download_link = url_for('static', filename=excel_path)
+        else:
+            download_link = None
+        return render_template('inputs_cur_form.html', success='Inputs Excel file ready for download.', download_link=download_link, analysis_id=analysis_id, username=session.get('username'))
+
+    # Asset plot: fallback for symbol
+    symbol = analysis_data.get('symbol') or analysis_data.get('target_asset') or 'ASSET'
+
+    # --- Ensure prediction plot path is always available if present ---
+    plot_path = None
+    if 'predictions' in analysis_data and analysis_data['predictions'].get('plot_path'):
+        plot_path = analysis_data['predictions']['plot_path']
+    elif 'plot_path' in analysis_data:
+        plot_path = analysis_data['plot_path']
+    if plot_path:
+        analysis_data['plot_path'] = plot_path
+
+    # --- Fetch news for the symbol using NewsAPI (not just today's news) ---
+    news = []
+    try:
+        news_response = newsapi.get_everything(q=symbol, language='en', sort_by='publishedAt', page_size=10)
+        if news_response.get('status') == 'ok':
+            for article in news_response.get('articles', []):
+                news.append({
+                    'title': article.get('title'),
+                    'url': article.get('url'),
+                    'published_at': article.get('publishedAt', '')[:10],
+                    'source': article.get('source', {}).get('name', ''),
+                    'sentiment_score': None
+                })
+    except Exception as e:
+        news = []
+    analysis_data['news'] = news
+
+    return render_template('analysis.html', analysis=analysis_data, symbol=symbol, user_action=user_action, analysis_id=analysis_id)
 @app.route('/analyze', methods=['POST'])
 def analyze():
     if 'user_id' not in session:
