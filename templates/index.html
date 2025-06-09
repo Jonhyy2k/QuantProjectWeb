@@ -243,13 +243,13 @@
                                                 <td class="small text-muted">{{ analysis['timestamp'] if analysis['timestamp'] else 'N/A' }}</td>
                                                 <td>
                                                     <span class="action-badge {{ analysis['user_action']|default('none') }}">
-                                                        {{ analysis['user_action']|replace('_', ' ')|default('None') }}
+                                                        {{ analysis['user_action']|replace('_', ' ') if analysis['user_action'] else 'Stock Analysis' }}
                                                     </span>
                                                 </td>
                                                 <td class="current-price text-muted" data-symbol="{{ analysis['symbol'] }}">$--.--</td>
                                                 <td class="profit-loss text-muted">--.--%</td> {# Kept as placeholder #}
-                                                <td>
-                                                    <div class="btn-group btn-group-sm">
+                                                <td class="text-center">
+                                                    <div class="btn-group btn-group-sm d-flex justify-content-center" role="group">
                                                         <a href="{{ url_for('view_analysis', analysis_id=analysis['id']) }}" class="btn btn-outline-primary" title="View Details">
                                                             <i class="fas fa-eye"></i>
                                                         </a>

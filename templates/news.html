@@ -98,15 +98,21 @@
             </div>
             {% endif %}
         </div>
+        <form id="news-search-form" class="mb-3 d-flex" autocomplete="off">
+            <input type="text" class="form-control me-2" id="news-search-input" placeholder="Search news for ticker (e.g., AAPL)" style="max-width: 250px;">
+            <button type="submit" class="btn btn-primary">Search</button>
+            <button type="button" class="btn btn-outline-success ms-2 d-none" id="add-to-watchlist-btn"><i class="fas fa-star"></i> Add to Watchlist</button>
+            <button type="button" class="btn btn-outline-warning ms-2 d-none" id="remove-from-watchlist-btn"><i class="fas fa-star-half-alt"></i> Remove from Watchlist</button>
+        </form>
+        <div id="search-news-articles-container" class="row mb-4" style="display:none;"></div>
         <hr>
-
         <div id="news-articles-container" class="row">
             </div>
         <div id="loading-spinner-container" class="text-center py-5" style="display: none;">
             <i class="fas fa-spinner fa-spin" id="loading-spinner"></i>
             <p class="mt-2">Loading news...</p>
         </div>
-         <div id="no-news-message" class="text-center py-5 text-muted" style="display: none;">
+        <div id="no-news-message" class="text-center py-5 text-muted" style="display: none;">
             <i class="fas fa-inbox fa-3x mb-3"></i>
             <p>No news articles found for this selection.</p>
         </div>
@@ -127,7 +133,13 @@
             const loadingSpinnerContainer = $('#loading-spinner-container');
             const noNewsMessage = $('#no-news-message');
             const newsSectionTitle = $('#news-section-title');
+            const searchForm = $('#news-search-form');
+            const searchInput = $('#news-search-input');
+            const searchResults = $('#search-news-articles-container');
+            const addBtn = $('#add-to-watchlist-btn');
+            const removeBtn = $('#remove-from-watchlist-btn');
             let currentNewsType = 'general'; // Default
+            let lastSearchedTicker = '';
 
             if ("{{ has_watchlist }}" === "True") {
                 currentNewsType = 'watchlist'; // If watchlist exists, default to watchlist news
@@ -221,6 +233,59 @@
                 $(this).addClass('active');
                 currentNewsType = $(this).data('news-type');
                 fetchAndDisplayNews(currentNewsType);
+            });
+
+            searchForm.on('submit', function(e) {
+                e.preventDefault();
+                const ticker = searchInput.val().trim().toUpperCase();
+                if (!ticker) return;
+                searchResults.empty().hide();
+                addBtn.addClass('d-none');
+                removeBtn.addClass('d-none');
+                $.ajax({
+                    url: '/api/news_search',
+                    method: 'GET',
+                    data: { ticker: ticker },
+                    success: function(res) {
+                        if (res.news && res.news.length > 0) {
+                            searchResults.show();
+                            searchResults.empty();
+                            res.news.forEach(function(article) {
+                                const html = `<div class='col-md-6 col-lg-4 mb-4'><div class='card news-card h-100 shadow-sm'><div class='card-body d-flex flex-column'><h5 class='card-title mb-2'>${article.title || 'No Title'}</h5><div class='source-time mt-auto'><small class='text-muted'><strong>${article.source || 'Unknown Source'}</strong></small><br><small class='text-muted'>${article.published_at || ''}</small></div></div><div class='card-footer bg-transparent border-top-0'><a href='${article.url}' target='_blank' class='btn btn-sm btn-outline-primary w-100'>Read Full Article <i class='fas fa-external-link-alt ms-1'></i></a></div></div></div>`;
+                                searchResults.append(html);
+                            });
+                        } else {
+                            searchResults.show().html('<div class="col-12 text-center text-muted">No news found for ' + ticker + '.</div>');
+                        }
+                        lastSearchedTicker = ticker;
+                        if (res.in_watchlist) {
+                            addBtn.addClass('d-none');
+                            removeBtn.removeClass('d-none');
+                        } else {
+                            addBtn.removeClass('d-none');
+                            removeBtn.addClass('d-none');
+                        }
+                    },
+                    error: function() {
+                        searchResults.show().html('<div class="col-12 text-center text-danger">Error fetching news for ' + ticker + '.</div>');
+                        addBtn.addClass('d-none');
+                        removeBtn.addClass('d-none');
+                    }
+                });
+            });
+            addBtn.on('click', function() {
+                if (!lastSearchedTicker) return;
+                $.post('/watchlist/add', { symbol: lastSearchedTicker }, function(resp) {
+                    addBtn.addClass('d-none');
+                    removeBtn.removeClass('d-none');
+                });
+            });
+            removeBtn.on('click', function() {
+                if (!lastSearchedTicker) return;
+                $.post('/watchlist/remove', { symbol: lastSearchedTicker }, function(resp) {
+                    removeBtn.addClass('d-none');
+                    addBtn.removeClass('d-none');
+                });
             });
 
             // Initial load
