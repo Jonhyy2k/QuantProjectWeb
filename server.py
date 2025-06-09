@@ -177,61 +177,51 @@ def inputs_cur_page():
 
     if request.method == 'POST':
         if not request.form.get('csrf_token') == session.get('csrf_token'):
-            return jsonify({'error': 'CSRF token validation failed'}), 400
+            return render_template('inputs_cur_form.html', error="CSRF token validation failed.", username=session.get('username'))
 
         ticker_symbol = request.form.get('ticker_symbol', '').strip().upper()
         if not ticker_symbol:
             return render_template('inputs_cur_form.html', error="Ticker symbol cannot be empty.", username=session.get('username'))
 
         try:
-            # Define the template path (ensure LIS_Valuation_Empty.xlsx is accessible)
-            template_path = "LIS_Valuation_Empty.xlsx" # Adjust path if necessary
+            from Inputs_Cur import populate_valuation_model, field_map, field_cell_map
+            import shutil
+            import time
+            # Use the same template and output logic as your working script
+            template_path = "LIS_Valuation_Empty.xlsx"
+            output_dir = os.path.join(app.static_folder, 'currency_analyses_outputs')
+            os.makedirs(output_dir, exist_ok=True)
+            safe_ticker_filename = ticker_symbol.replace(" ", "_").replace("/", "_")
+            output_file_name = f"{safe_ticker_filename}_Valuation_Model_{time.strftime('%d%m%Y_%H%M')}.xlsx"
+            final_output_path = os.path.join(output_dir, output_file_name)
 
-            # Run the analysis from Inputs_Cur.py
-            # The output_directory should be where Flask can serve files from, or you implement a download handler
-            generated_excel_path = run_inputs_cur_analysis(
+            # Call the working function
+            populate_valuation_model(
                 template_path=template_path,
-                output_directory=CURRENCY_ANALYSIS_DIR,
-                ticker_symbol_from_web=ticker_symbol
+                output_path=final_output_path,
+                ticker_symbol=ticker_symbol,
+                current_field_map=field_map,
+                current_field_cell_map=field_cell_map
             )
 
-            if generated_excel_path:
-                # Make the file path relative to the static folder for URL generation
-                relative_excel_path = os.path.join('currency_analyses_outputs', os.path.basename(generated_excel_path))
-
-                # Save metadata to the database
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                analysis_data_json = json.dumps({
-                    "type": "Inputs_Cur_Analysis",
-                    "ticker": ticker_symbol,
-                    "output_file_relative": relative_excel_path, # Store relative path
-                    "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                })
-                timestamp_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-                cursor.execute('''
-                    INSERT INTO analyses (user_id, symbol, analysis_data, timestamp, user_action)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (session['user_id'], ticker_symbol, analysis_data_json, timestamp_now, "Inputs_Cur Generated"))
-                conn.commit()
-                new_analysis_id = cursor.lastrowid
-                conn.close()
-
+            # Check if file exists and is not empty
+            if os.path.exists(final_output_path) and os.path.getsize(final_output_path) > 0:
+                relative_excel_path = os.path.relpath(final_output_path, app.static_folder)
+                # Ensure the path uses forward slashes for URL compatibility (especially on Windows)
+                relative_excel_path = relative_excel_path.replace("\\", "/")
+                download_link = url_for('static', filename=relative_excel_path)
                 return render_template('inputs_cur_form.html',
                                        success=f"Analysis for {ticker_symbol} completed!",
-                                       download_link=url_for('static', filename=relative_excel_path),
-                                       analysis_id=new_analysis_id,
+                                       download_link=download_link,
+                                       analysis_id=None,
                                        username=session.get('username'))
             else:
-                return render_template('inputs_cur_form.html', error="Analysis failed to generate the Excel file.", username=session.get('username'))
+                return render_template('inputs_cur_form.html', error="Analysis failed to generate the Excel file or file is empty.", username=session.get('username'))
 
-        except FileNotFoundError as fnf_error:
-            app.logger.error(f"Template file not found: {fnf_error}")
-            return render_template('inputs_cur_form.html', error=f"Critical error: Valuation template file not found.", username=session.get('username'))
         except Exception as e:
             app.logger.error(f"Error during Inputs_Cur analysis for {ticker_symbol}: {e}")
-            traceback.print_exc() # For detailed error logging in Flask console
+            import traceback
+            traceback.print_exc()
             return render_template('inputs_cur_form.html', error=f"An error occurred: {str(e)}", username=session.get('username'))
 
     return render_template('inputs_cur_form.html', username=session.get('username'))
