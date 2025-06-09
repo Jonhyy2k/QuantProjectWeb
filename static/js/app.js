@@ -437,6 +437,101 @@ $(document).ready(function() {
         });
     }
 
+    // --- MARKET OVERVIEW LOGIC ---
+    function fetchMarketOverviewPrices() {
+        const marketSymbols = ['^GSPC', '^IXIC', '^DJI', '^TNX', '^VIX'];
+        const csrfToken = getCSRFToken();
+        const headers = {};
+        if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
+        $.ajax({
+            url: CONFIG.api.stockPrices,
+            method: 'POST',
+            data: { symbols: marketSymbols },
+            headers: headers,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.prices) {
+                    updateMarketOverviewDisplays(response.prices);
+                } else {
+                    showUnavailableMarketOverview(marketSymbols);
+                }
+            },
+            error: function() {
+                showUnavailableMarketOverview(marketSymbols);
+            }
+        });
+    }
+
+    function updateMarketOverviewDisplays(prices) {
+        $('.market-value').each(function() {
+            const el = $(this);
+            const symbol = el.data('symbol');
+            const priceData = prices[symbol];
+            if (priceData) {
+                if (symbol === '^TNX') {
+                    // 10-Year Treasury is usually quoted as a yield, not a price
+                    el.text(parseFloat(priceData.price).toFixed(2) + '%');
+                } else if (symbol === '^VIX') {
+                    el.text(parseFloat(priceData.price).toFixed(2));
+                } else {
+                    // S&P, Nasdaq, Dow: show price and change
+                    const price = parseFloat(priceData.price).toFixed(2);
+                    const change = parseFloat(priceData.change_percent).toFixed(2);
+                    const changeClass = priceData.change_percent >= 0 ? 'text-success' : 'text-danger';
+                    el.html(`$${price} <span class="market-change ${changeClass}">${change >= 0 ? '+' : ''}${change}%</span>`);
+                }
+            } else {
+                if (symbol === '^TNX') {
+                    el.text('--.--%');
+                } else if (symbol === '^VIX') {
+                    el.text('--.--');
+                } else {
+                    el.html('$---.-- <span class="market-change">--.-%</span>');
+                }
+            }
+        });
+    }
+
+    function showUnavailableMarketOverview(symbols) {
+        $('.market-value').each(function() {
+            const el = $(this);
+            const symbol = el.data('symbol');
+            if (symbol === '^TNX') {
+                el.text('--.--%');
+            } else if (symbol === '^VIX') {
+                el.text('--.--');
+            } else {
+                el.html('$---.-- <span class="market-change">--.-%</span>');
+            }
+        });
+    }
+
+    // --- Integrate with ticker tape and refresh logic ---
+    function loadAllDynamicPrices() {
+        loadStockPrices();
+        fetchMarketOverviewPrices();
+    }
+
+    // Initial load
+    loadAllDynamicPrices();
+    // Periodic refresh
+    setInterval(loadAllDynamicPrices, CONFIG.refreshInterval);
+
+    // Also update on Refresh Data button
+    $('#refresh-data').off('click').on('click', function() {
+        const button = $(this);
+        button.html('<span class="spinner-border spinner-border-sm"></span> Refreshing...').prop('disabled', true);
+        debounce(function() {
+            loadAllDynamicPrices();
+            updateCounts();
+            setTimeout(function() {
+                button.html('<i class="fas fa-sync-alt"></i> Refresh Data').prop('disabled', false);
+                showToast('Display data refreshed!', 'success');
+            }, 750);
+        }, CONFIG.debounceDelay)();
+    });
+    
     $('#analyze-form').on('submit', function(e) {
         e.preventDefault();
         
@@ -979,7 +1074,7 @@ $(document).ready(function() {
         button.html('<span class="spinner-border spinner-border-sm"></span> Refreshing...').prop('disabled', true);
 
         debounce(function() {
-            loadStockPrices();
+            loadAllDynamicPrices();
             updateCounts();
             
             setTimeout(function() {

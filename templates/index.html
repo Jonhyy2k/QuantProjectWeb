@@ -191,12 +191,27 @@
                         <i class="fas fa-globe"></i> Market Overview
                     </div>
                     <div class="card-body p-0">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between"><span>S&P 500</span><span class="text-success">+1.2% <i class="fas fa-caret-up"></i></span></li>
-                            <li class="list-group-item d-flex justify-content-between"><span>Nasdaq</span><span class="text-success">+1.5% <i class="fas fa-caret-up"></i></span></li>
-                            <li class="list-group-item d-flex justify-content-between"><span>Dow Jones</span><span class="text-success">+0.9% <i class="fas fa-caret-up"></i></span></li>
-                            <li class="list-group-item d-flex justify-content-between"><span>10-Year Treasury</span><span>3.85%</span></li>
-                            <li class="list-group-item d-flex justify-content-between"><span>VIX</span><span>18.25</span></li>
+                        <ul class="list-group list-group-flush" id="market-overview-list">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>S&amp;P 500</span>
+                                <span class="market-value" data-symbol="^GSPC">$---.-- <span class="market-change">--.-%</span></span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Nasdaq</span>
+                                <span class="market-value" data-symbol="^IXIC">$---.-- <span class="market-change">--.-%</span></span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Dow Jones</span>
+                                <span class="market-value" data-symbol="^DJI">$---.-- <span class="market-change">--.-%</span></span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>10-Year Treasury</span>
+                                <span class="market-value" data-symbol="^TNX">--.--%</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>VIX</span>
+                                <span class="market-value" data-symbol="^VIX">--.--</span>
+                            </li>
                         </ul>
                     </div>
                 </div>
