@@ -3,7 +3,7 @@ import sqlite3
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-from main import main as run_stock_analysis
+from mainall import perform_analysis_for_server as run_stock_analysis # Updated import
 import requests
 import schedule
 import time
@@ -14,21 +14,144 @@ import re
 import secrets  # For generating CSRF tokens
 import yfinance as yf  # For fetching real-time stock prices
 import traceback
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory # Added send_from_directory
-# ... (other imports)
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory 
 from datetime import datetime
 import os
 import json
-# Assuming Inputs_Cur.py is in the same directory or accessible via PYTHONPATH
 from Inputs_Cur import populate_valuation_model as run_inputs_cur_analysis # Rename for clarity
+from AssetPlotter import plot_assets_with_highlights, ASSET_MAP
+from newsapi import NewsApiClient # Add this import
+import datetime as dt
 
-# ... rest of your Flask app code ...
 app = Flask(__name__)
+app.secret_key = "your_secret_key_here" # Make sure this is set
+app.config['NEWS_API_KEY'] = '178e06846327414aa7440357aeabcb3e'
+
+newsapi = NewsApiClient(api_key=app.config['NEWS_API_KEY'])
+
+# server.py
+
+# Define Magnificent 7 and General Market Keywords
+MAGNIFICENT_SEVEN = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA']
+GENERAL_MARKET_KEYWORDS = [
+    "stock market", "finance", "economic outlook", "market trends",
+    "investing", "S&P 500", "NASDAQ", "Dow Jones"
+]
+
+def format_news_query(keywords_list):
+    """Helper to format a list of keywords into a NewsAPI query string."""
+    return " OR ".join(f'"{keyword}"' for keyword in keywords_list)
+
+def fetch_articles(query_string, page_size=20, language='en', sort_by='publishedAt'):
+    """Fetches articles from NewsAPI based on a query string."""
+    try:
+        # Calculate 'from_param' to get news from the last 7 days as an example
+        # NewsAPI free tier might have limitations on how far back you can search
+        from_date = (dt.datetime.now() - dt.timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%S')
+
+        top_headlines = newsapi.get_everything(
+            q=query_string,
+            language=language,
+            sort_by=sort_by,
+            page_size=page_size,
+            from_param=from_date # Get news from up to 7 days ago
+        )
+        if top_headlines.get('status') == 'ok':
+            return top_headlines.get('articles', [])
+        else:
+            app.logger.error(f"NewsAPI error: {top_headlines.get('message')}")
+            return []
+    except Exception as e:
+        app.logger.error(f"Exception during NewsAPI call: {e}")
+        traceback.print_exc()
+        return []
+
+def get_user_watchlist_tickers(user_id):
+    """Fetches watchlist tickers for a given user."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT symbol FROM watchlists WHERE user_id = ?', (user_id,))
+    watchlist_symbols = [row['symbol'] for row in cursor.fetchall()]
+    conn.close()
+    return watchlist_symbols
+
+def get_watchlist_news_articles(user_id):
+    """Gets news articles for the user's watchlist."""
+    tickers = get_user_watchlist_tickers(user_id)
+    if not tickers:
+        return []
+    # For company-specific news, it's often better to use company names if available,
+    # or ensure tickers are widely recognized by NewsAPI.
+    # Using tickers directly can sometimes be noisy.
+    # For simplicity, we'll use tickers here.
+    query = format_news_query(tickers)
+    return fetch_articles(query_string=query)
+
+def get_general_market_news_articles():
+    """Gets general market news including Magnificent Seven."""
+    # Combine Mag7 tickers (as keywords) with general market keywords
+    # NewsAPI works best with keywords rather than just tickers for broad topics.
+    # For Mag7, you might want to query them as company names or add "stock"
+    mag7_keywords = [f"{ticker} stock" for ticker in MAGNIFICENT_SEVEN] # e.g., "AAPL stock"
+    combined_keywords = mag7_keywords + GENERAL_MARKET_KEYWORDS
+    query = format_news_query(combined_keywords)
+    return fetch_articles(query_string=query, page_size=30) # Fetch a bit more for general news
+
+# server.py
+
+@app.route('/news')
+def news_page():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    username = session.get('username')
+    user_id = session['user_id']
+    
+    watchlist_tickers = get_user_watchlist_tickers(user_id)
+    
+    # Initial articles to load:
+    # If watchlist is empty, load general news.
+    # Otherwise, can load watchlist news by default (or general, your choice)
+    # The frontend will then use AJAX to switch if needed.
+    
+    # For the initial load, let's not fetch here to keep it simple.
+    # The frontend will make an AJAX call to /api/news_articles to load initial news.
+    
+    return render_template('news.html',
+                           username=username,
+                           has_watchlist=bool(watchlist_tickers))
+
+@app.route('/api/news_articles')
+def api_news_articles():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    news_type = request.args.get('type', 'general') # Default to general news
+    user_id = session['user_id']
+    articles = []
+
+    if news_type == 'watchlist':
+        watchlist_tickers = get_user_watchlist_tickers(user_id)
+        if watchlist_tickers:
+            articles = get_watchlist_news_articles(user_id)
+        else: # If watchlist is empty but 'watchlist' type requested, return general
+            articles = get_general_market_news_articles()
+    else: # 'general' or any other value
+        articles = get_general_market_news_articles()
+        
+    # Filter out articles with "[Removed]" title or description if any
+    articles = [
+        article for article in articles
+        if article.get('title') != "[Removed]" and article.get('description') and article.get('urlToImage')
+    ]
+
+
+    return jsonify(articles=articles)
+
 app.secret_key = "your_secret_key_here"
 DB_FILE = "stock_analysis.db"
 TXT_FILE = "STOCK_ANALYSIS_RESULTS.txt"
 
-# Pushover configuration (update with your credentials or remove)
 PUSHOVER_USER_KEY = "uyy9e7ihn6r3u8yxmzw64btrqwv7gx"
 PUSHOVER_API_TOKEN = "am486b2ntgarapn4yc3ieaeyg5w6gd"
 
@@ -112,6 +235,129 @@ def inputs_cur_page():
             return render_template('inputs_cur_form.html', error=f"An error occurred: {str(e)}", username=session.get('username'))
 
     return render_template('inputs_cur_form.html', username=session.get('username'))
+
+@app.route('/asset_plotter', methods=['GET', 'POST'])
+def asset_plotter_page():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        if not request.form.get('csrf_token') == session.get('csrf_token'):
+            return jsonify({'error': 'CSRF token validation failed'}), 400
+
+        try:
+            # Get form data
+            target_asset = request.form.get('target_asset', '').strip().upper()
+            related_assets_str = request.form.get('related_assets', '').strip()
+            start_date = request.form.get('start_date', '').strip()
+            end_date = request.form.get('end_date', '').strip()
+            ma_window = int(request.form.get('ma_window', 20))
+            average_related = 'average_related' in request.form
+
+            # Validation
+            if not target_asset:
+                return render_template('asset_plotter_form.html', error="Target asset is required.", username=session.get('username'))
+            
+            if not start_date or not end_date:
+                return render_template('asset_plotter_form.html', error="Start date and end date are required.", username=session.get('username'))
+
+            # Parse related assets
+            related_assets = []
+            if related_assets_str:
+                related_assets = [asset.strip().upper() for asset in related_assets_str.split(',') if asset.strip()]
+
+            # Map asset names to tickers if needed
+            target_asset = ASSET_MAP.get(target_asset.lower(), target_asset)
+            related_assets = [ASSET_MAP.get(asset.lower(), asset) for asset in related_assets]
+
+            # Parse events
+            events = {}
+            event_dates = request.form.getlist('event_dates[]')
+            event_descriptions = request.form.getlist('event_descriptions[]')
+            
+            for date, desc in zip(event_dates, event_descriptions):
+                if date and desc:
+                    events[date] = desc
+
+            # Create output directory
+            asset_plots_dir = os.path.join(app.static_folder, 'asset_plots')
+            os.makedirs(asset_plots_dir, exist_ok=True)
+
+            # Generate unique filename
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            output_filename = f"asset_plot_{target_asset}_{timestamp}.png"
+            output_path = os.path.join(asset_plots_dir, output_filename)
+
+            # Modify the AssetPlotter function to save to our specific location
+            import matplotlib.pyplot as plt
+            import matplotlib
+            matplotlib.use('Agg')
+
+            # Call the plotting function with our parameters
+            plot_assets_with_highlights(
+                target_asset=target_asset,
+                related_assets=related_assets,
+                start_date=start_date,
+                end_date=end_date,
+                events=events if events else None,
+                average_related=average_related,
+                ma_window=ma_window
+            )
+
+            # Move the generated file to our asset_plots directory
+            default_output = "bloomberg_style_asset_performance.png"
+            if os.path.exists(default_output):
+                import shutil
+                shutil.move(default_output, output_path)
+                
+                # Create URL for the plot
+                plot_url = url_for('static', filename=f'asset_plots/{output_filename}')
+                
+                # Save metadata to database
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                plot_data = {
+                    "type": "Asset_Plotter",
+                    "target_asset": target_asset,
+                    "related_assets": related_assets,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "ma_window": ma_window,
+                    "average_related": average_related,
+                    "events": events,
+                    "plot_file": f'asset_plots/{output_filename}',
+                    "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                cursor.execute('''
+                    INSERT INTO analyses (user_id, symbol, analysis_data, timestamp, user_action)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (session['user_id'], target_asset, json.dumps(plot_data), 
+                      datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "Asset Plot Generated"))
+                conn.commit()
+                conn.close()
+
+                return render_template('asset_plotter_form.html',
+                                     success=f"Asset performance chart generated successfully!",
+                                     plot_url=plot_url,
+                                     username=session.get('username'))
+            else:
+                return render_template('asset_plotter_form.html', 
+                                     error="Failed to generate chart. Please try again.", 
+                                     username=session.get('username'))
+
+        except ValueError as e:
+            return render_template('asset_plotter_form.html', 
+                                 error=f"Invalid input: {str(e)}", 
+                                 username=session.get('username'))
+        except Exception as e:
+            app.logger.error(f"Error in asset plotter: {e}")
+            traceback.print_exc()
+            return render_template('asset_plotter_form.html', 
+                                 error=f"An error occurred: {str(e)}", 
+                                 username=session.get('username'))
+
+    return render_template('asset_plotter_form.html', username=session.get('username'))
 
 # --- Add this filter definition ---
 def format_datetime(value, format='%Y-%m-%d %H:%M'):
@@ -300,105 +546,100 @@ def extract_data_from_block(analysis_block_text):
 # --- REPLACE your existing find_most_recent_analysis_from_txt function with this ---
 def find_most_recent_analysis_from_txt(user_id, symbol):
     """
-    Search STOCK_ANALYSIS_RESULTS.txt for the most recent analysis for the given symbol.
-    Extracts data from the block and checks the database.
+    Parses STOCK_ANALYSIS_RESULTS.txt (which contains a file header and a single stock analysis)
+    to find the analysis for the given symbol. Extracts data and checks/updates the database.
 
     Returns a tuple of (analysis_data, timestamp_str, analysis_id) if found, else (None, None, None).
     """
-    symbol_to_find = symbol.upper() # Ensure comparison is case-insensitive
-    most_recent_block_text = None
-    most_recent_timestamp_obj = None
+    target_symbol_upper = symbol.upper()
 
-    # --- Robust block finding logic ---
+    # 1. File Existence and Reading
     if not os.path.exists(TXT_FILE):
         print(f"[INFO] {TXT_FILE} not found.")
         return None, None, None
-
     try:
-        with open(TXT_FILE, 'r', encoding='utf-8') as f: # Specify encoding
+        with open(TXT_FILE, 'r', encoding='utf-8') as f:
             content = f.read()
     except Exception as e:
         print(f"[ERROR] Failed to read {TXT_FILE}: {e}")
+        traceback.print_exc()
         return None, None, None
 
-    # Determine separator
-    if "===== STOCK_ANALYSIS_RESULTS =====" in content:
-        separator = "===== STOCK_ANALYSIS_RESULTS ====="
-    elif "==================================================" in content:
-        separator = "=================================================="
-    else:
-        separator = r'\n=== ANALYSIS FOR ' # Fallback
+    # 2. Timestamp Extraction (Global to the File)
+    file_timestamp_obj = None
+    file_timestamp_str = None
+    
+    timestamp_match = re.search(r'Generated on:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})', content)
+    if timestamp_match:
+        timestamp_str_from_file = timestamp_match.group(1)
+        try:
+            file_timestamp_obj = datetime.strptime(timestamp_str_from_file, '%Y-%m-%d %H:%M:%S')
+            file_timestamp_str = timestamp_str_from_file
+        except ValueError:
+            print(f"[WARNING] Could not parse 'Generated on:' timestamp '{timestamp_str_from_file}' from {TXT_FILE}.")
+            file_timestamp_obj = None # Ensure it's None if parsing fails
 
-    # Split content
-    if separator != r'\n=== ANALYSIS FOR ':
-        blocks = content.split(separator)
-    else:
-        blocks = re.split(separator, content)[1:]
-        blocks = ['=== ANALYSIS FOR ' + block for block in blocks]
+    if file_timestamp_obj is None: # Fallback if "Generated on:" is missing or unparseable
+        try:
+            mtime = os.path.getmtime(TXT_FILE)
+            file_timestamp_obj = datetime.fromtimestamp(mtime)
+            file_timestamp_str = file_timestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
+            print(f"[WARNING] Using file modification time {file_timestamp_str} as fallback for {TXT_FILE}.")
+        except Exception as e:
+            print(f"[ERROR] Could not get or parse file modification time for {TXT_FILE}: {e}")
+            traceback.print_exc()
+            return None, None, None # Critical if no timestamp can be determined
 
-    symbol_blocks_with_timestamps = []
-
-    for block_idx, block in enumerate(blocks):
-        if not block.strip(): continue
-
-        block_symbol_match = re.search(r'=== ANALYSIS FOR ([\w.-]+) ===', block, re.IGNORECASE)
-        if block_symbol_match and block_symbol_match.group(1).upper() == symbol_to_find:
-            timestamp_str = None
-            timestamp_obj = None
-
-            ts_match_new = re.search(r'Generated on:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})', block, re.IGNORECASE)
-            if ts_match_new:
-                timestamp_str = ts_match_new.group(1)
-                try:
-                    timestamp_obj = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
-                except ValueError:
-                    print(f"[WARNING] Could not parse timestamp '{timestamp_str}' in block {block_idx} for {symbol_to_find}")
-                    timestamp_obj = None
-
-            # Add other potential timestamp formats here...
-
-            if timestamp_obj:
-                 # Reconstruct block text accurately
-                 if separator != r'\n=== ANALYSIS FOR ':
-                      reconstructed_block = separator + block if not block.startswith(separator) else block
-                 else:
-                      reconstructed_block = block
-                 symbol_blocks_with_timestamps.append((reconstructed_block, timestamp_obj))
-            else:
-                # Attempt to use file modification time as a last resort timestamp
-                try:
-                    mtime = os.path.getmtime(TXT_FILE)
-                    timestamp_obj = datetime.datetime.fromtimestamp(mtime)
-                    print(f"[WARNING] Using file modification time {timestamp_obj} as fallback timestamp for block {block_idx} for {symbol_to_find}")
-                    # Reconstruct block text accurately
-                    if separator != r'\n=== ANALYSIS FOR ':
-                        reconstructed_block = separator + block if not block.startswith(separator) else block
-                    else:
-                        reconstructed_block = block
-                    symbol_blocks_with_timestamps.append((reconstructed_block, timestamp_obj))
-                except Exception as e:
-                    print(f"[ERROR] Could not get file modification time for {TXT_FILE}: {e}")
-                    print(f"[WARNING] Skipping block {block_idx} for {symbol_to_find} due to missing timestamp.")
+    # 3. Analysis Content Isolation
+    header_separator = "=================================================="
+    parts = content.split(header_separator, 1)
+    
+    isolated_analysis_content = None
+    if len(parts) > 1:
+        # Content after the first occurrence of the separator, then find the actual analysis block
+        content_after_header = parts[1]
+        # The actual analysis starts with "=== ANALYSIS FOR SYMBOL ==="
+        analysis_block_match = re.search(r'=== ANALYSIS FOR [\w.-]+ ===.*', content_after_header, re.DOTALL)
+        if analysis_block_match:
+            isolated_analysis_content = analysis_block_match.group(0)
+        else:
+            # This case might occur if the file exists but contains only the header
+            # or if the "=== ANALYSIS FOR..." part is missing after the separator.
+            print(f"[ERROR] Analysis block start '=== ANALYSIS FOR ... ===' not found after header separator in {TXT_FILE}.")
+            # Check if the symbol we are looking for is mentioned anywhere, to avoid false negatives if file is malformed
+            if target_symbol_upper not in content.upper():
+                 print(f"[INFO] Target symbol {target_symbol_upper} not found anywhere in {TXT_FILE}. Assuming no analysis present for this symbol.")
+                 return None, None, None # No analysis for this symbol
+            # If symbol is present but structure is wrong, it's an error
+            return None, None, None
 
 
-    if not symbol_blocks_with_timestamps:
-        print(f"[INFO] No valid analysis blocks found for {symbol_to_find} in {TXT_FILE}.")
+    if not isolated_analysis_content:
+        # This could happen if the separator is not found, or content_after_header was empty/malformed
+        print(f"[ERROR] Could not isolate analysis content from {TXT_FILE} using separator. File structure might be unexpected.")
+        # Similar check as above: if the symbol isn't in the file at all, it's not an error for *this* symbol.
+        if target_symbol_upper not in content.upper():
+             print(f"[INFO] Target symbol {target_symbol_upper} not found in {TXT_FILE}. Assuming no analysis present.")
+             return None, None, None
         return None, None, None
 
-    # Sort by timestamp to find the most recent
-    symbol_blocks_with_timestamps.sort(key=lambda x: x[1], reverse=True)
-    most_recent_block_text, most_recent_timestamp_obj = symbol_blocks_with_timestamps[0]
-    most_recent_timestamp_str = most_recent_timestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
-    print(f"[INFO] Found most recent block for {symbol_to_find} dated {most_recent_timestamp_str}")
-
-    # --- Extract data from the most recent block ---
-    analysis_data = extract_data_from_block(most_recent_block_text)
+    # 4. Data Extraction from Analysis Content
+    analysis_data = extract_data_from_block(isolated_analysis_content)
 
     if not analysis_data:
-        print(f"[ERROR] Failed to extract data from the most recent block for {symbol_to_find}")
+        print(f"[ERROR] Failed to extract data from the isolated analysis content in {TXT_FILE}.")
+        return None, None, None
+    
+    extracted_symbol_upper = analysis_data.get('symbol', '').upper()
+    if not extracted_symbol_upper:
+        print(f"[ERROR] Symbol not found in extracted analysis data from {TXT_FILE}.")
         return None, None, None
 
-    # --- Check/Insert into Database (similar to original logic) ---
+    if extracted_symbol_upper != target_symbol_upper:
+        print(f"[INFO] Extracted symbol '{extracted_symbol_upper}' does not match target '{target_symbol_upper}' in {TXT_FILE}. This file is for a different stock.")
+        return None, None, None # File is for a different stock
+
+    # 5. Database Interaction (Using file_timestamp_str)
     conn = get_db_connection()
     cursor = conn.cursor()
     analysis_id = None
@@ -407,32 +648,32 @@ def find_most_recent_analysis_from_txt(user_id, symbol):
             SELECT id
             FROM analyses
             WHERE user_id = ? AND symbol = ? AND timestamp = ?
-        ''', (user_id, symbol_to_find, most_recent_timestamp_str))
+        ''', (user_id, target_symbol_upper, file_timestamp_str))
         existing = cursor.fetchone()
 
         if existing:
             analysis_id = existing['id']
-            print(f"[INFO] Found existing analysis in DB (ID: {analysis_id}) for {symbol_to_find} at {most_recent_timestamp_str}")
+            print(f"[INFO] Found existing analysis in DB (ID: {analysis_id}) for {target_symbol_upper} at {file_timestamp_str}")
         else:
             # Insert the newly extracted data if it wasn't in the DB for this timestamp
             analysis_json = json.dumps(analysis_data) # Use the extracted dictionary
             cursor.execute('''
                 INSERT INTO analyses (user_id, symbol, analysis_data, timestamp)
                 VALUES (?, ?, ?, ?)
-            ''', (user_id, symbol_to_find, analysis_json, most_recent_timestamp_str))
+            ''', (user_id, target_symbol_upper, analysis_json, file_timestamp_str))
             conn.commit()
             analysis_id = cursor.lastrowid # Get the ID of the newly inserted row
-            print(f"[INFO] Inserted analysis from {TXT_FILE} into DB (ID: {analysis_id}) for {symbol_to_find} at {most_recent_timestamp_str}")
+            print(f"[INFO] Inserted analysis from {TXT_FILE} into DB (ID: {analysis_id}) for {target_symbol_upper} at {file_timestamp_str}")
 
     except sqlite3.Error as e:
-        print(f"[ERROR] Database error for {symbol_to_find}: {e}")
+        print(f"[ERROR] Database error for {target_symbol_upper}: {e}")
         conn.rollback() # Rollback any changes if error occurs
         return None, None, None # Return None on DB error
     finally:
         conn.close()
 
     # Return the extracted data, the timestamp string, and the analysis ID
-    return analysis_data, most_recent_timestamp_str, analysis_id
+    return analysis_data, file_timestamp_str, analysis_id
 
 
 def sync_data():
@@ -607,32 +848,25 @@ def analyze():
     try:
         process = multiprocessing.Process(target=run_analysis_in_process, args=(session['user_id'], symbol))
         process.start()
-        process.join()
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT id
-            FROM analyses
-            WHERE user_id = ? AND symbol = ?
-            ORDER BY timestamp DESC
-            LIMIT 1
-        ''', (session['user_id'], symbol))
-        new_analysis = cursor.fetchone()
-        conn.close()
-        
-        if new_analysis:
-            analysis_id = new_analysis['id']
+        process.join() # Wait for the analysis process to complete
+
+        # After the process, try to get the analysis details from the TXT file
+        # find_most_recent_analysis_from_txt will also handle DB insertion/update
+        analysis_data, timestamp_str, analysis_id_from_txt = find_most_recent_analysis_from_txt(session['user_id'], symbol)
+
+        if analysis_id_from_txt:
             send_pushover_notification(
                 session['username'],
                 f"Analysis completed for {symbol}",
-                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id}"
+                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id_from_txt}"
             )
-            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id})
+            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id_from_txt})
         else:
-            return jsonify({'error': 'Analysis failed to save to database'}), 500
+            app.logger.error(f"Analysis for {symbol} (user {session['user_id']}) ran, but find_most_recent_analysis_from_txt failed to return an analysis ID.")
+            return jsonify({'error': 'Analysis ran, but failed to save or process for history.'}), 500
     except Exception as e:
-        print(f"[ERROR] Analysis error: {e}")
+        app.logger.error(f"Exception in /analyze route for {symbol} (user {session['user_id']}): {e}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/analyze/new', methods=['POST'])
@@ -647,32 +881,25 @@ def analyze_new():
     try:
         process = multiprocessing.Process(target=run_analysis_in_process, args=(session['user_id'], symbol))
         process.start()
-        process.join()
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT id
-            FROM analyses
-            WHERE user_id = ? AND symbol = ?
-            ORDER BY timestamp DESC
-            LIMIT 1
-        ''', (session['user_id'], symbol))
-        new_analysis = cursor.fetchone()
-        conn.close()
-        
-        if new_analysis:
-            analysis_id = new_analysis['id']
+        process.join() # Wait for the analysis process to complete
+
+        # After the process, try to get the analysis details from the TXT file
+        # find_most_recent_analysis_from_txt will also handle DB insertion/update
+        analysis_data, timestamp_str, analysis_id_from_txt = find_most_recent_analysis_from_txt(session['user_id'], symbol)
+
+        if analysis_id_from_txt:
             send_pushover_notification(
                 session['username'],
                 f"Analysis completed for {symbol}",
-                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id}"
+                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id_from_txt}"
             )
-            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id})
+            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id_from_txt})
         else:
-            return jsonify({'error': 'Analysis failed to save to database'}), 500
+            app.logger.error(f"Analysis for {symbol} (user {session['user_id']}) (new) ran, but find_most_recent_analysis_from_txt failed to return an analysis ID.")
+            return jsonify({'error': 'Analysis ran, but failed to save or process for history.'}), 500
     except Exception as e:
-        print(f"[ERROR] Analysis error: {e}")
+        app.logger.error(f"Exception in /analyze/new route for {symbol} (user {session['user_id']}): {e}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/action', methods=['POST'])

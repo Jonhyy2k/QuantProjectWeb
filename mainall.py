@@ -2,9 +2,6 @@
 
 #THIS IS IT!!! MAYBE MORE LSTM 
 #it was done, for now...
-import sqlite3
-import json
-from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import json
 import numpy as np
@@ -30,7 +27,7 @@ from keras.layers import Dense, LSTM, Dropout, Input, GRU, BatchNormalization, B
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 import logging
-#from bloomberg import get_normalized_news_sentiment
+from bloomberg import get_normalized_news_sentiment
 
 TF_ENABLE_ONEDNN_OPTS=0
 
@@ -3216,7 +3213,7 @@ def calculate_adaptive_risk_adjustment(max_drawdown, drawdown_frequency, drawdow
     return max(0.5, min(1.0, risk_adjustment))
 
 # Create prediction plot
-def create_improved_prediction_plot(stock_data, prediction_data, symbol, plot_dir="static/prediction_plots"):
+def create_improved_prediction_plot(stock_data, prediction_data, symbol, plot_dir="prediction_plots"):
     """
     Create improved stock price prediction plot with tighter bands and more information.
     
@@ -3375,117 +3372,191 @@ def create_improved_prediction_plot(stock_data, prediction_data, symbol, plot_di
         plt.close()
 
         print(f"[INFO] Improved price prediction plot saved to {plot_path}")
-        # Return relative path for Flask static file serving
-        return plot_path.replace('static/', '') if plot_path.startswith('static/') else plot_path
+        return plot_path
 
     except Exception as e:
         print(f"[ERROR] Error creating improved prediction plot: {e}")
         traceback.print_exc()
         return None
 
-# Initialize in-memory buffer for stock results
-stock_results_buffer = []
-
-
-def append_stock_result(user_id, symbol, result):
+def append_stock_result(result):
     """
-    Save the stock analysis result to the database and append to STOCK_ANALYSIS_RESULTS.txt.
-    Args:
-        user_id (int): The ID of the user.
-        symbol (str): The stock symbol.
-        result (dict): The analysis result dictionary.
+    Append detailed stock analysis result to the output file
+    
+    Parameters:
+    -----------
+    result: dict
+        Stock analysis result
     """
     try:
-        # Step 1: Convert non-serializable objects (e.g., DatetimeIndex) to JSON-serializable formats
-        def make_serializable(obj):
-            if isinstance(obj, pd.DatetimeIndex):
-                return obj.strftime('%Y-%m-%d').tolist()
-            elif isinstance(obj, pd.Series) and isinstance(obj.index, pd.DatetimeIndex):
-                return {str(date): val for date, val in obj.items()}
-            elif isinstance(obj, dict):
-                return {k: make_serializable(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [make_serializable(item) for item in obj]
-            return obj
-
-        # Apply serialization fix to the result dictionary
-        serializable_result = make_serializable(result)
-
-        # Step 2: Convert result to JSON string
-        analysis_json = json.dumps(serializable_result, indent=2)
-
-        # Step 3: Save to database
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO analyses (user_id, symbol, analysis_data, timestamp)
-            VALUES (?, ?, ?, ?)
-        ''', (user_id, symbol, analysis_json, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-        conn.commit()
-        conn.close()
-        logging.info(f"Saved analysis for {symbol} to database")
-
-        # Step 4: Append to STOCK_ANALYSIS_RESULTS.txt
-        with open('STOCK_ANALYSIS_RESULTS.txt', 'a') as f:
-            f.write("===== STOCK ANALYSIS RESULTS =====\n")
-            f.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write(f"=== ANALYSIS FOR {symbol} ===\n")
-            f.write(f"Current Price: ${result.get('price', 0):.2f}\n")
-            f.write(f"Sigma Score: {result.get('sigma', 0):.3f}\n")
-            f.write(f"Recommendation: {result.get('recommendation', 'N/A')}\n")
-            f.write("=== PRICE PREDICTIONS ===\n")
-            predictions = result.get('predictions', {})
-            f.write(f"30-Day Target: ${predictions.get('price_target_30d', 0):.2f} ({predictions.get('expected_return_30d', 0):.1f}%)\n")
-            f.write(f"60-Day Target: ${predictions.get('price_target_60d', 0):.2f} ({predictions.get('expected_return_60d', 0):.1f}%)\n")
-            f.write(f"Prediction Plot: {result.get('plot_path', 'N/A')}\n")
-            f.write("=== RISK METRICS ===\n")
-            risk_metrics = result.get('risk_metrics', {})
-            f.write(f"Maximum Drawdown: {risk_metrics.get('max_drawdown', 0):.2f}\n")
-            f.write(f"Sharpe Ratio: {risk_metrics.get('sharpe', 0):.2f}\n")
-            f.write(f"Kelly Criterion: {risk_metrics.get('kelly', 0):.2f}\n")
-            f.write("================================\n\n")
-        logging.info(f"Appended analysis for {symbol} to STOCK_ANALYSIS_RESULTS.txt")
-
-    except Exception as e:
-        logging.error(f"Failed to append result for {symbol}: {e}")
-        raise
-
-def flush_results_buffer():
-    """
-    Write all buffered results to the output file in a single operation
-    """
-    global stock_results_buffer
-
-    if not stock_results_buffer:
-        print("[INFO] No results in buffer to flush")
-        return True
-
-    try:
-        # Combine all results with separators
-        combined_output = "\n" + "=" * 50 + "\n\n".join(stock_results_buffer) + "\n\n"
-
-        # Append to file in a single write operation
         with open(OUTPUT_FILE, "a") as file:
-            file.write(combined_output)
-
-        print(f"[INFO] Successfully flushed {len(stock_results_buffer)} results to {OUTPUT_FILE}")
-
-        # Clear the buffer
-        stock_results_buffer.clear()
-        return True
+            # Basic information
+            file.write(f"=== ANALYSIS FOR {result['symbol']} ===\n")
+            
+            # Add company info if available
+            if result.get('company_info'):
+                company = result['company_info']
+                file.write(f"Company: {company.get('Name', 'N/A')}\n")
+                file.write(f"Industry: {company.get('Industry', 'N/A')}\n")
+                file.write(f"Sector: {company.get('Sector', 'N/A')}\n")
+            
+            # Price and changes
+            if result.get('quote_data'):
+                quote = result['quote_data']
+                file.write(f"Current Price: ${quote.get('price', 0):.2f}\n")
+                file.write(f"Change: {quote.get('change', 0):.2f} ({quote.get('change_percent', '0%')})\n")
+            else:
+                file.write(f"Current Price: ${result['price']:.2f}\n")
+            
+            file.write(f"Sigma Score: {result['sigma']:.5f}\n")
+            file.write(f"Recommendation: {result['recommendation']}\n\n")
+            
+            # Detailed analysis
+            analysis = result['analysis']
+            
+            file.write("--- COMPONENT SCORES ---\n")
+            file.write(f"Momentum Score: {analysis.get('momentum_score', 0):.3f}\n")
+            file.write(f"Reversion Score: {analysis.get('reversion_score', 0):.3f}\n")
+            file.write(f"Balance Factor: {analysis.get('balance_factor', 0):.3f}\n")
+            
+            file.write("\n--- TECHNICAL INDICATORS ---\n")
+            file.write(f"RSI: {analysis.get('rsi', 0):.2f}\n")
+            file.write(f"MACD: {analysis.get('macd', 0):.5f}\n")
+            file.write(f"SMA Trend: {analysis.get('sma_trend', 0):.5f}\n")
+            file.write(f"Distance from SMA200: {analysis.get('dist_from_sma200', 0):.3f}\n")
+            file.write(f"Volatility: {analysis.get('volatility', 0):.5f}\n")
+            
+            file.write("\n--- MARKET REGIME ---\n")
+            file.write(f"Hurst Exponent: {analysis.get('hurst_exponent', 0):.3f} ({analysis.get('hurst_regime', 'Unknown')})\n")
+            file.write(f"Mean Reversion Half-Life: {analysis.get('mean_reversion_half_life', 0):.1f} days ({analysis.get('mean_reversion_speed', 'Unknown')})\n")
+            file.write(f"Mean Reversion Beta: {analysis.get('mean_reversion_beta', 0):.3f}\n")
+            file.write(f"Volatility Regime: {analysis.get('volatility_regime', 'Unknown')}\n")
+            file.write(f"Volatility Term Structure: {analysis.get('vol_term_structure', 0):.3f}\n")
+            file.write(f"Volatility Persistence: {analysis.get('vol_persistence', 0):.3f}\n")
+            file.write(f"Market Regime: {analysis.get('market_regime', 'Unknown')}\n")
+            
+            file.write("\n--- RISK METRICS ---\n")
+            file.write(f"Maximum Drawdown: {analysis.get('max_drawdown', 0):.2%}\n")
+            file.write(f"Kelly Criterion: {analysis.get('kelly', 0):.3f}\n")
+            file.write(f"Sharpe Ratio: {analysis.get('sharpe', 0):.3f}\n")
+            
+            file.write("\n--- ADVANCED METRICS ---\n")
+            if 'advanced_metrics' in analysis:
+                advanced = analysis['advanced_metrics']
+                for key, value in advanced.items():
+                    if isinstance(value, dict):
+                        file.write(f"{key}:\n")
+                        for subkey, subvalue in value.items():
+                            file.write(f"  {subkey}: {subvalue}\n")
+                    else:
+                        file.write(f"{key}: {value}\n")
+            else:
+                file.write("No advanced metrics available\n")
+            
+            file.write("\n--- MACHINE LEARNING ---\n")
+            file.write(f"LSTM Prediction: {analysis.get('lstm_prediction', 0):.3f}\n")
+            file.write(f"DQN Recommendation: {analysis.get('dqn_recommendation', 0):.3f}\n")
+            
+            # Add more detailed metrics if available
+            if 'multifractal' in analysis:
+                file.write("\n--- MULTIFRACTAL ANALYSIS ---\n")
+                for key, value in analysis['multifractal'].items():
+                    if isinstance(value, dict):
+                        file.write(f"{key}:\n")
+                        for subkey, subvalue in value.items():
+                            file.write(f"  {subkey}: {subvalue}\n")
+                    else:
+                        file.write(f"{key}: {value}\n")
+                        
+            if 'tail_risk' in analysis:
+                file.write("\n--- TAIL RISK ANALYSIS ---\n")
+                tail_risk = analysis['tail_risk']
+                if isinstance(tail_risk, dict):
+                    # Extract key metrics
+                    if 'tail_type' in tail_risk:
+                        file.write(f"Tail Type: {tail_risk['tail_type']}\n")
+                    if 'tail_description' in tail_risk:
+                        file.write(f"Description: {tail_risk['tail_description']}\n")
+                    if 'expected_shortfall' in tail_risk:
+                        es = tail_risk['expected_shortfall']
+                        for key, value in es.items():
+                            file.write(f"{key}: {value:.2%}\n")
+                    
+            if 'wavelet' in analysis:
+                file.write("\n--- WAVELET ANALYSIS ---\n")
+                wavelet = analysis['wavelet']
+                if isinstance(wavelet, dict) and 'wavelet_transform' in wavelet:
+                    wt = wavelet['wavelet_transform']
+                    if 'dominant_period' in wt:
+                        file.write(f"Dominant Cycle: {wt['dominant_period']:.2f} days\n")
+                    if 'dominant_frequency' in wt:
+                        file.write(f"Dominant Frequency: {wt['dominant_frequency']:.6f}\n")
+            
+            # Add fundamental data if available
+            if result.get('company_info'):
+                file.write("\n--- FUNDAMENTAL DATA ---\n")
+                fund_data = result['company_info']
+                metrics = [
+                    ('MarketCapitalization', 'Market Cap', ''),
+                    ('PERatio', 'P/E Ratio', ''),
+                    ('PEGRatio', 'PEG Ratio', ''),
+                    ('PriceToBookRatio', 'P/B Ratio', ''),
+                    ('EVToEBITDA', 'EV/EBITDA', ''),
+                    ('ProfitMargin', 'Profit Margin', '%'),
+                    ('OperatingMarginTTM', 'Operating Margin', '%'),
+                    ('ReturnOnAssetsTTM', 'ROA', '%'),
+                    ('ReturnOnEquityTTM', 'ROE', '%'),
+                    ('RevenueTTM', 'Revenue TTM', ''),
+                    ('GrossProfitTTM', 'Gross Profit TTM', ''),
+                    ('DilutedEPSTTM', 'EPS TTM', ''),
+                    ('QuarterlyEarningsGrowthYOY', 'Quarterly Earnings Growth', '%'),
+                    ('QuarterlyRevenueGrowthYOY', 'Quarterly Revenue Growth', '%'),
+                    ('AnalystTargetPrice', 'Analyst Target', '$'),
+                    ('Beta', 'Beta', ''),
+                    ('52WeekHigh', '52-Week High', '$'),
+                    ('52WeekLow', '52-Week Low', '$'),
+                    ('50DayMovingAverage', '50-Day MA', '$'),
+                    ('200DayMovingAverage', '200-Day MA', '$'),
+                    ('DividendYield', 'Dividend Yield', '%'),
+                    ('DividendPerShare', 'Dividend Per Share', '$'),
+                    ('PayoutRatio', 'Payout Ratio', '%'),
+                ]
+                
+                for key, label, suffix in metrics:
+                    if key in fund_data and fund_data[key]:
+                        try:
+                            # Format numbers properly
+                            if key in ['MarketCapitalization', 'RevenueTTM', 'GrossProfitTTM']:
+                                # Convert large numbers to billions/millions
+                                value = float(fund_data[key])
+                                if value >= 1e9:
+                                    formatted = f"${value/1e9:.2f}B"
+                                elif value >= 1e6:
+                                    formatted = f"${value/1e6:.2f}M"
+                                else:
+                                    formatted = f"${value:.2f}"
+                            elif suffix == '$':
+                                formatted = f"${float(fund_data[key]):.2f}"
+                            elif suffix == '%':
+                                formatted = f"{float(fund_data[key]):.2f}%"
+                            else:
+                                formatted = f"{fund_data[key]}"
+                                
+                            file.write(f"{label}: {formatted}\n")
+                        except:
+                            file.write(f"{label}: {fund_data[key]}\n")
+            
+            file.write("\n" + "="*50 + "\n\n")
+            
+            return True
     except Exception as e:
-        print(f"[ERROR] Failed to flush results buffer: {e}")
+        print(f"[ERROR] Failed to append result: {e}")
         traceback.print_exc()
         return False
-
 
 def initialize_output_file():
     """Initialize the output file with a header"""
     try:
-        # Clear the buffer if any previous analysis was running
-        global stock_results_buffer
-        stock_results_buffer.clear()
-
         # Create directory for the output file if needed
         output_dir = os.path.dirname(OUTPUT_FILE)
         if output_dir and not os.path.exists(output_dir):
@@ -3493,14 +3564,14 @@ def initialize_output_file():
             print(f"[INFO] Created directory for output file: {output_dir}")
 
         # Create or append to the output file
-        mode = "a" if os.path.exists(OUTPUT_FILE) else "w"
+        mode = "w" # Always write, overwriting existing file
         with open(OUTPUT_FILE, mode) as file:
-            if mode == "w":  # Only write header for new files
-                file.write("===== OPTIMIZED STOCK ANALYSIS RESULTS =====\n")
-                file.write(f"Generated on: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-                file.write(
-                    f"GPU Acceleration: {'Enabled' if len(tensorflow.config.list_physical_devices('GPU')) > 0 else 'Disabled'}\n")
-                file.write("=" * 50 + "\n\n")
+            # Header will always be written since mode is 'w'
+            file.write("===== OPTIMIZED STOCK ANALYSIS RESULTS =====\n")
+            file.write(f"Generated on: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            file.write(
+                f"GPU Acceleration: {'Enabled' if len(tensorflow.config.list_physical_devices('GPU')) > 0 else 'Disabled'}\n")
+            file.write("=" * 50 + "\n\n")
 
         print(f"[INFO] Output file initialized: {OUTPUT_FILE}")
         return True
@@ -3509,67 +3580,114 @@ def initialize_output_file():
         traceback.print_exc()
         return False
 
-DB_FILE = "stock_analysis.db"
-
-from alpha_vantage.timeseries import TimeSeries
-
-def main(user_id, symbol):
+def perform_analysis_for_server(symbol, user_id=None):
     """
-    Perform stock analysis for the given symbol and save the result.
-    Args:
-        user_id (int): The ID of the user requesting the analysis.
-        symbol (str): The stock symbol (e.g., AAPL).
-    Returns:
-        int or None: The ID of the saved analysis in the database, or None if the analysis fails.
+    Performs stock analysis for a given symbol, optionally for a user.
+    Initializes client, analyzes stock, initializes output file, appends result, and prints summary.
     """
+    # Create prediction plots directory if it doesn't exist
+    # This is a good place as analyze_stock (which might create a plot) is called soon after.
     try:
-        logging.info(f"Starting analysis for {symbol} (User ID: {user_id})")
-
-        # Step 1: Initialize the API client
-        from alpha_vantage_client import AlphaVantageClient
-        client = AlphaVantageClient()
-
-        # Step 2: Perform the real analysis using analyze_stock
-        result = analyze_stock(symbol, client)
-        
-        if result is None:
-            logging.error(f"Analysis failed for {symbol}")
-            return None
-
-        logging.info(f"Analysis completed for {symbol}")
-
-        # Step 3: Save the result to database and text file
-        append_stock_result(user_id, symbol, result)
-
-        # Step 4: Fetch the new analysis ID
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT id
-            FROM analyses
-            WHERE user_id = ? AND symbol = ?
-            ORDER BY timestamp DESC
-            LIMIT 1
-        ''', (user_id, symbol))
-        row = cursor.fetchone()
-        
-        if row is None:
-            logging.error(f"No analysis record found for {symbol} after insertion")
-            raise Exception("Failed to insert analysis into database")
-
-        analysis_id = row[0]
-        conn.close()
-
-        logging.info(f"Analysis for {symbol} completed successfully. Analysis ID: {analysis_id}")
-        return analysis_id
-
+        os.makedirs("prediction_plots", exist_ok=True)
+        # print("[INFO] Ensured directory exists for prediction plots: prediction_plots") # Optional: can be verbose
     except Exception as e:
-        logging.error(f"Failed to complete analysis for {symbol}: {e}")
+        print(f"[WARNING] Failed to create prediction plots directory: {e}")
         traceback.print_exc()
-        return None
-    
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
 
-#PUSHOVER_USER_KEY = "uyy9e7ihn6r3u8yxmzw64btrqwv7gx"
-#PUSHOVER_API_TOKEN = "am486b2ntgarapn4yc3ieaeyg5w6gd"
+    client = AlphaVantageClient(ALPHA_VANTAGE_API_KEY)
+    result = analyze_stock(symbol, client)
+
+    if result:
+        if not initialize_output_file():
+            print(f"[ERROR] Failed to initialize output file for {symbol}. Check permissions and path.")
+            # Potentially return an error or raise an exception if file init is critical
+        else:
+            append_stock_result(result)
+            print(f"Analysis for {symbol} completed and saved to {OUTPUT_FILE}")
+
+        if 'predictions' in result and result['predictions'] is not None: # Ensure predictions exist
+            pred = result['predictions']
+            print(f"\nPrice Predictions for {symbol}:")
+            print(f"30-Day Target: ${pred.get('price_target_30d', 0):.2f} ({pred.get('expected_return_30d', 0):.2f}%)")
+            print(f"60-Day Target: ${pred.get('price_target_60d', 0):.2f} ({pred.get('expected_return_60d', 0):.2f}%)")
+
+            if 'plot_path' in result and result['plot_path'] is not None:
+                print(f"Prediction Plot for {symbol} saved to: {result['plot_path']}")
+    else:
+        print(f"Analysis for {symbol} failed. See log for details.")
+    
+    return result
+
+# Main function
+def main():
+    """Main function to run the stock analysis"""
+    print("\n===== ENHANCED STOCK ANALYZER =====")
+    print("Using advanced ML and mean reversion analysis with price prediction")
+    print("=" * 50 + "\n")
+
+    try:
+        # Check if command line arguments were provided
+        import sys
+        if len(sys.argv) > 1:
+            # Use the first argument as the stock symbol
+            symbol = sys.argv[1].strip().upper()
+            print(f"[INFO] Using command line argument for symbol: {symbol}")
+            perform_analysis_for_server(symbol) # user_id is optional
+            return # Exit after command-line analysis
+
+        # Interactive mode if no command line arguments
+        # Alpha Vantage client for symbol search in interactive mode
+        search_client = AlphaVantageClient(ALPHA_VANTAGE_API_KEY)
+        while True:
+            print("\nOptions:")
+            print("1. Analyze a stock")
+            print("2. Search for a stock")
+            print("3. Exit")
+
+            choice = input("Select an option (1-3): ").strip()
+
+            if choice == '1':
+                symbol = input("Enter stock symbol to analyze: ").strip().upper()
+                if not symbol:
+                    print("Please enter a valid stock symbol.")
+                    continue
+                perform_analysis_for_server(symbol) # user_id is optional
+
+            elif choice == '2':
+                keywords = input("Enter company name or keywords to search: ").strip()
+                if not keywords:
+                    print("Please enter valid search terms.")
+                    continue
+                
+                matches = search_client.get_symbol_search(keywords) # Use search_client here
+
+                if matches:
+                    print("\nMatching stocks:")
+                    print(f"{'Symbol':<10} {'Type':<8} {'Region':<8} Name")
+                    print("-" * 70)
+                    for match in matches:
+                        print(f"{match['symbol']:<10} {match['type']:<8} {match['region']:<8} {match['name']}")
+                    
+                    analyze_choice = input("\nWould you like to analyze one of these stocks? (y/n): ").strip().lower()
+                    if analyze_choice == 'y':
+                        symbol_to_analyze = input("Enter the symbol to analyze: ").strip().upper()
+                        if symbol_to_analyze:
+                            perform_analysis_for_server(symbol_to_analyze) # user_id is optional
+                else:
+                    print("No matching stocks found.")
+
+            elif choice == '3':
+                print("Exiting program. Thank you!")
+                break
+
+            else:
+                print("Invalid option. Please select 1, 2, or 3.")
+    except Exception as e:
+        print(f"[ERROR] An unexpected error occurred in the main function: {e}")
+        traceback.print_exc()
+    finally:
+        print("[INFO] Analysis complete.")
+
+
+if __name__ == "__main__":
+    main()

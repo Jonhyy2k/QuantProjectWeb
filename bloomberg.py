@@ -1,5 +1,6 @@
 import blpapi
 import time # Add time import if not already present
+#178e06846327414aa7440357aeabcb3e
 
 def get_normalized_news_sentiment(ticker_symbol):
     """

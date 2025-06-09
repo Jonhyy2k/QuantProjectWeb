@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>QuantPulse | {{ symbol }} Analysis</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"> </head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"> </head>
 <body>
      <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
@@ -71,7 +72,7 @@
                     </div>
                 </div>
                 <div class="col-lg-6 text-lg-end">
-                    <div class="price-large">${{ analysis['price']|float|round(2) }}</div>
+                    <div class="price-large">${{ analysis.get('price', 0.0)|float|round(2) }}</div>
                      {% set daily_change_pct = analysis.get('daily_change_percent', 0.0) %}
                     {% set daily_change_abs = analysis.get('daily_change_absolute', 0.0) %}
                     <span class="price-change {% if daily_change_pct >= 0 %}positive{% else %}negative{% endif %}">
@@ -127,22 +128,22 @@
                          {% if analysis.get('predictions') %}
                             <div class="row mb-3">
                                 <div class="col-md-6 mb-3 mb-md-0">
-                                    <div class="target-price {% if analysis['predictions']['expected_return_30d']|float >= 0 %}positive{% else %}negative{% endif %}">
-                                        <div class="price">${{ analysis['predictions']['price_target_30d']|float|round(2) }}</div>
+                                    <div class="target-price {% if analysis.get('predictions', {}).get('expected_return_30d', 0)|float >= 0 %}positive{% else %}negative{% endif %}">
+                                        <div class="price">${{ analysis.get('predictions', {}).get('price_target_30d', 0)|float|round(2) }}</div>
                                         <div class="change">
                                             <small>30-Day Target</small>
-                                            {% if analysis['predictions']['expected_return_30d']|float >= 0 %} <i class="fas fa-caret-up me-1"></i> {% else %} <i class="fas fa-caret-down me-1"></i> {% endif %}
-                                            {{ analysis['predictions']['expected_return_30d']|float|round(2)|abs }}%
+                                            {% if analysis.get('predictions', {}).get('expected_return_30d', 0)|float >= 0 %} <i class="fas fa-caret-up me-1"></i> {% else %} <i class="fas fa-caret-down me-1"></i> {% endif %}
+                                            {{ analysis.get('predictions', {}).get('expected_return_30d', 0)|float|round(2)|abs }}%
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                     <div class="target-price {% if analysis['predictions']['expected_return_60d']|float >= 0 %}positive{% else %}negative{% endif %}">
-                                        <div class="price">${{ analysis['predictions']['price_target_60d']|float|round(2) }}</div>
+                                     <div class="target-price {% if analysis.get('predictions', {}).get('expected_return_60d', 0)|float >= 0 %}positive{% else %}negative{% endif %}">
+                                        <div class="price">${{ analysis.get('predictions', {}).get('price_target_60d', 0)|float|round(2) }}</div>
                                         <div class="change">
                                             <small>60-Day Target</small>
-                                             {% if analysis['predictions']['expected_return_60d']|float >= 0 %} <i class="fas fa-caret-up me-1"></i> {% else %} <i class="fas fa-caret-down me-1"></i> {% endif %}
-                                            {{ analysis['predictions']['expected_return_60d']|float|round(2)|abs }}%
+                                             {% if analysis.get('predictions', {}).get('expected_return_60d', 0)|float >= 0 %} <i class="fas fa-caret-up me-1"></i> {% else %} <i class="fas fa-caret-down me-1"></i> {% endif %}
+                                            {{ analysis.get('predictions', {}).get('expected_return_60d', 0)|float|round(2)|abs }}%
                                         </div>
                                     </div>
                                 </div>
@@ -150,11 +151,11 @@
 
                              {% if analysis.get('predictions', {}).get('plot_path') %}
                                 <div class="prediction-chart mb-3 text-center">
-                                    <img src="{{ url_for('static', filename=analysis['predictions']['plot_path']) }}" class="img-fluid border rounded" alt="Prediction Plot for {{ symbol }}">
+                                    <img src="{{ url_for('static', filename=analysis.get('predictions', {}).get('plot_path', '')) }}" class="img-fluid border rounded" alt="Prediction Plot for {{ symbol }}">
                                 </div>
                              {% elif analysis.get('plot_path') %}
                                 <div class="prediction-chart mb-3 text-center">
-                                    <img src="{{ url_for('static', filename=analysis['plot_path']) }}" class="img-fluid border rounded" alt="Prediction Plot for {{ symbol }}">
+                                    <img src="{{ url_for('static', filename=analysis.get('plot_path', '')) }}" class="img-fluid border rounded" alt="Prediction Plot for {{ symbol }}">
                                 </div>
                              {% else %}
                                 <div class="prediction-chart d-flex align-items-center justify-content-center border rounded mb-3 bg-light">
@@ -219,7 +220,7 @@
                              </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <strong>Sigma Score</strong>
-                                <span class="badge bg-info text-dark">{{ analysis['sigma']|float|round(5)|default('N/A') }}</span>
+                                <span class="badge bg-info text-dark">{{ analysis.get('sigma', 0)|float|round(5)|default('N/A') }}</span>
                             </li>
                             {% if analysis.get('news_sentiment_score') is not none %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
