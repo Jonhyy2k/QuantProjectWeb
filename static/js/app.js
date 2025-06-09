@@ -1117,4 +1117,12 @@ $(document).ready(function() {
     
     initPageFeatures();
 
+    // News item click handler for analysis detail page
+    $('body').on('click', '.news-item', function(e) {
+        var href = $(this).attr('href');
+        if (href && href.indexOf('news_page') !== -1) {
+            e.preventDefault();
+            window.location.href = href;
+        }
+    });
 }); // End of $(document).ready()
