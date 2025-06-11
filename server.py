@@ -1,174 +1,92 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
-import sqlite3
-import json
-from werkzeug.security import generate_password_hash, check_password_hash
 import os
-from mainall import perform_analysis_for_server as run_stock_analysis # Updated import
+import json
+import re
+import secrets
+import threading
+import time
+import traceback
+import multiprocessing
+from datetime import datetime, timedelta
 import requests
 import schedule
-import time
-import threading
-from datetime import datetime  # Import the datetime class
-import multiprocessing
-import re
-import secrets  # For generating CSRF tokens
-import yfinance as yf  # For fetching real-time stock prices
-import traceback
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory 
-from datetime import datetime
-import os
-import json
-from Inputs_Cur import populate_valuation_model as run_inputs_cur_analysis # Rename for clarity
+import yfinance as yf
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
+from newsapi import NewsApiClient
+import shutil
+import matplotlib
+matplotlib.use('Agg') # Use a non-interactive backend for server environments
+
+# Custom Module Imports (ensure these .py files are in the same directory)
+from mainall import perform_analysis_for_server as run_stock_analysis
+from Inputs_Cur import populate_valuation_model as run_inputs_cur_analysis, field_map, field_cell_map
 from AssetPlotter import plot_assets_with_highlights, ASSET_MAP
-from newsapi import NewsApiClient # Add this import
-import datetime as dt
+
+# ==============================================================================
+# App Initialization and Configuration
+# ==============================================================================
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key_here" # Make sure this is set
-app.config['NEWS_API_KEY'] = '178e06846327414aa7440357aeabcb3e'
 
+# --- Primary Configuration ---
+app.secret_key = os.environ.get('SECRET_KEY', 'a-strong-default-secret-key-for-development')
+
+# For AWS, set this environment variable to your PostgreSQL or MySQL database URL.
+# Example: "postgresql://user:password@host:port/dbname"
+db_uri = os.environ.get('DATABASE_URL', 'sqlite:///stock_analysis_local.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['NEWS_API_KEY'] = os.environ.get('NEWS_API_KEY', '178e06846327414aa7440357aeabcb3e')
+
+# Initialize extensions
+db = SQLAlchemy(app)
 newsapi = NewsApiClient(api_key=app.config['NEWS_API_KEY'])
 
-# server.py
-
-# Define Magnificent 7 and General Market Keywords
-MAGNIFICENT_SEVEN = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA']
-GENERAL_MARKET_KEYWORDS = [
-    "stock market", "finance", "economic outlook", "market trends",
-    "investing", "S&P 500", "NASDAQ", "Dow Jones"
-]
-
-def format_news_query(keywords_list):
-    """Helper to format a list of keywords into a NewsAPI query string."""
-    return " OR ".join(f'"{keyword}"' for keyword in keywords_list)
-
-def fetch_articles(query_string, page_size=20, language='en', sort_by='publishedAt'):
-    """Fetches articles from NewsAPI based on a query string."""
-    try:
-        # Calculate 'from_param' to get news from the last 7 days as an example
-        # NewsAPI free tier might have limitations on how far back you can search
-        from_date = (dt.datetime.now() - dt.timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%S')
-
-        top_headlines = newsapi.get_everything(
-            q=query_string,
-            language=language,
-            sort_by=sort_by,
-            page_size=page_size,
-            from_param=from_date # Get news from up to 7 days ago
-        )
-        if top_headlines.get('status') == 'ok':
-            return top_headlines.get('articles', [])
-        else:
-            app.logger.error(f"NewsAPI error: {top_headlines.get('message')}")
-            return []
-    except Exception as e:
-        app.logger.error(f"Exception during NewsAPI call: {e}")
-        traceback.print_exc()
-        return []
-
-def get_user_watchlist_tickers(user_id):
-    """Fetches watchlist tickers for a given user."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT symbol FROM watchlists WHERE user_id = ?', (user_id,))
-    watchlist_symbols = [row['symbol'] for row in cursor.fetchall()]
-    conn.close()
-    return watchlist_symbols
-
-def get_watchlist_news_articles(user_id):
-    """Gets news articles for the user's watchlist."""
-    tickers = get_user_watchlist_tickers(user_id)
-    if not tickers:
-        return []
-    # For company-specific news, it's often better to use company names if available,
-    # or ensure tickers are widely recognized by NewsAPI.
-    # Using tickers directly can sometimes be noisy.
-    # For simplicity, we'll use tickers here.
-    query = format_news_query(tickers)
-    return fetch_articles(query_string=query)
-
-def get_general_market_news_articles():
-    """Gets general market news including Magnificent Seven."""
-    # Combine Mag7 tickers (as keywords) with general market keywords
-    # NewsAPI works best with keywords rather than just tickers for broad topics.
-    # For Mag7, you might want to query them as company names or add "stock"
-    mag7_keywords = [f"{ticker} stock" for ticker in MAGNIFICENT_SEVEN] # e.g., "AAPL stock"
-    combined_keywords = mag7_keywords + GENERAL_MARKET_KEYWORDS
-    query = format_news_query(combined_keywords)
-    return fetch_articles(query_string=query, page_size=30) # Fetch a bit more for general news
-
-# server.py
-
-@app.route('/news')
-def news_page():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    username = session.get('username')
-    user_id = session['user_id']
-    watchlist_tickers = get_user_watchlist_tickers(user_id)
-    return render_template('news.html', username=username, has_watchlist=bool(watchlist_tickers), watchlist=watchlist_tickers)
-
-@app.route('/api/news_search')
-def api_news_search():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    ticker = request.args.get('ticker', '').strip().upper()
-    if not ticker:
-        return jsonify({'error': 'No ticker provided'}), 400
-    news = []
-    try:
-        news_response = newsapi.get_everything(q=ticker, language='en', sort_by='publishedAt', page_size=10)
-        if news_response.get('status') == 'ok':
-            for article in news_response.get('articles', []):
-                news.append({
-                    'title': article.get('title'),
-                    'url': article.get('url'),
-                    'published_at': article.get('publishedAt', '')[:10],
-                    'source': article.get('source', {}).get('name', ''),
-                    'sentiment_score': None
-                })
-    except Exception as e:
-        news = []
-    # Also return if ticker is in user's watchlist
-    in_watchlist = ticker in get_user_watchlist_tickers(session['user_id'])
-    return jsonify({'news': news, 'in_watchlist': in_watchlist})
-
-@app.route('/api/news_articles')
-def api_news_articles():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-
-    news_type = request.args.get('type', 'general') # Default to general news
-    user_id = session['user_id']
-    articles = []
-
-    if news_type == 'watchlist':
-        watchlist_tickers = get_user_watchlist_tickers(user_id)
-        if watchlist_tickers:
-            articles = get_watchlist_news_articles(user_id)
-        else: # If watchlist is empty but 'watchlist' type requested, return general
-            articles = get_general_market_news_articles()
-    else: # 'general' or any other value
-        articles = get_general_market_news_articles()
-        
-    # Filter out articles with "[Removed]" title or description if any
-    articles = [
-        article for article in articles
-        if article.get('title') != "[Removed]" and article.get('description') and article.get('urlToImage')
-    ]
-
-
-    return jsonify(articles=articles)
-
-app.secret_key = "your_secret_key_here"
-DB_FILE = "stock_analysis.db"
+# --- Constants & File Paths ---
+PUSHOVER_USER_KEY = os.environ.get('PUSHOVER_USER_KEY', "uyy9e7ihn6r3u8yxmzw64btrqwv7gx")
+PUSHOVER_API_TOKEN = os.environ.get('PUSHOVER_API_TOKEN', "am486b2ntgarapn4yc3ieaeyg5w6gd")
 TXT_FILE = "STOCK_ANALYSIS_RESULTS.txt"
+MAGNIFICENT_SEVEN = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA']
+GENERAL_MARKET_KEYWORDS = ["stock market", "finance", "economic outlook", "market trends", "investing", "S&P 500", "NASDAQ", "Dow Jones"]
+CURRENCY_ANALYSIS_DIR = os.path.join(app.static_folder, 'currency_analyses_outputs')
+os.makedirs(CURRENCY_ANALYSIS_DIR, exist_ok=True)
 
-PUSHOVER_USER_KEY = "uyy9e7ihn6r3u8yxmzw64btrqwv7gx"
-PUSHOVER_API_TOKEN = "am486b2ntgarapn4yc3ieaeyg5w6gd"
 
-# CSRF Protection
+# ==============================================================================
+# SQLAlchemy Database Models
+# ==============================================================================
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    analyses = db.relationship('Analysis', backref='user', lazy=True, cascade="all, delete-orphan")
+    watchlists = db.relationship('Watchlist', backref='user', lazy=True, cascade="all, delete-orphan")
+
+class Analysis(db.Model):
+    __tablename__ = 'analyses'
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(20), nullable=False)
+    analysis_data = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    user_action = db.Column(db.String(50))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+class Watchlist(db.Model):
+    __tablename__ = 'watchlists'
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(20), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    __table_args__ = (db.UniqueConstraint('user_id', 'symbol', name='_user_symbol_uc'),)
+
+
+# ==============================================================================
+# Helper Functions (News, Data Extraction, Notifications)
+# ==============================================================================
+
 def generate_csrf_token():
     if 'csrf_token' not in session:
         session['csrf_token'] = secrets.token_hex(16)
@@ -176,607 +94,215 @@ def generate_csrf_token():
 
 app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
+def format_news_query(keywords_list):
+    return " OR ".join(f'"{keyword}"' for keyword in keywords_list)
 
-# In server.py, outside any function (global or app config)
-CURRENCY_ANALYSIS_DIR = os.path.join(app.static_folder, 'currency_analyses_outputs')
-os.makedirs(CURRENCY_ANALYSIS_DIR, exist_ok=True)
+def fetch_articles(query_string, page_size=20, language='en', sort_by='publishedAt'):
+    try:
+        from_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%S')
+        top_headlines = newsapi.get_everything(
+            q=query_string, language=language, sort_by=sort_by, page_size=page_size, from_param=from_date
+        )
+        if top_headlines.get('status') == 'ok':
+            return [
+                article for article in top_headlines.get('articles', [])
+                if article.get('title') != "[Removed]" and article.get('description') and article.get('urlToImage')
+            ]
+        else:
+            app.logger.error(f"NewsAPI error: {top_headlines.get('message')}")
+            return []
+    except Exception as e:
+        app.logger.error(f"Exception during NewsAPI call: {e}")
+        return []
 
-# In server.py
+def get_user_watchlist_tickers(user_id):
+    watchlist_items = Watchlist.query.filter_by(user_id=user_id).all()
+    return [item.symbol for item in watchlist_items]
 
-@app.route('/inputs_cur', methods=['GET', 'POST'])
-def inputs_cur_page():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+def get_watchlist_news_articles(user_id):
+    tickers = get_user_watchlist_tickers(user_id)
+    if not tickers:
+        return []
+    query = format_news_query(tickers)
+    return fetch_articles(query_string=query)
 
-    if request.method == 'POST':
-        if not request.form.get('csrf_token') == session.get('csrf_token'):
-            return render_template('inputs_cur_form.html', error="CSRF token validation failed.", username=session.get('username'))
-
-        ticker_symbol = request.form.get('ticker_symbol', '').strip().upper()
-        if not ticker_symbol:
-            return render_template('inputs_cur_form.html', error="Ticker symbol cannot be empty.", username=session.get('username'))
-
-        try:
-            from Inputs_Cur import populate_valuation_model, field_map, field_cell_map
-            import shutil
-            import time
-            # Use the same template and output logic as your working script
-            template_path = "LIS_Valuation_Empty.xlsx"
-            output_dir = os.path.join(app.static_folder, 'currency_analyses_outputs')
-            os.makedirs(output_dir, exist_ok=True)
-            safe_ticker_filename = ticker_symbol.replace(" ", "_").replace("/", "_")
-            output_file_name = f"{safe_ticker_filename}_Valuation_Model_{time.strftime('%d%m%Y_%H%M')}.xlsx"
-            final_output_path = os.path.join(output_dir, output_file_name)
-
-            # Call the working function
-            populate_valuation_model(
-                template_path=template_path,
-                output_path=final_output_path,
-                ticker_symbol=ticker_symbol,
-                current_field_map=field_map,
-                current_field_cell_map=field_cell_map
-            )
-
-            # Check if file exists and is not empty
-            if os.path.exists(final_output_path) and os.path.getsize(final_output_path) > 0:
-                relative_excel_path = os.path.relpath(final_output_path, app.static_folder)
-                # Ensure the path uses forward slashes for URL compatibility (especially on Windows)
-                relative_excel_path = relative_excel_path.replace("\\", "/")
-                download_link = url_for('static', filename=relative_excel_path)
-                return render_template('inputs_cur_form.html',
-                                       success=f"Analysis for {ticker_symbol} completed!",
-                                       download_link=download_link,
-                                       analysis_id=None,
-                                       username=session.get('username'))
-            else:
-                return render_template('inputs_cur_form.html', error="Analysis failed to generate the Excel file or file is empty.", username=session.get('username'))
-
-        except Exception as e:
-            app.logger.error(f"Error during Inputs_Cur analysis for {ticker_symbol}: {e}")
-            import traceback
-            traceback.print_exc()
-            return render_template('inputs_cur_form.html', error=f"An error occurred: {str(e)}", username=session.get('username'))
-
-    return render_template('inputs_cur_form.html', username=session.get('username'))
-
-@app.route('/asset_plotter', methods=['GET', 'POST'])
-def asset_plotter_page():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        if not request.form.get('csrf_token') == session.get('csrf_token'):
-            return jsonify({'error': 'CSRF token validation failed'}), 400
-
-        try:
-            # Get form data
-            target_asset = request.form.get('target_asset', '').strip().upper()
-            related_assets_str = request.form.get('related_assets', '').strip()
-            start_date = request.form.get('start_date', '').strip()
-            end_date = request.form.get('end_date', '').strip()
-            ma_window = int(request.form.get('ma_window', 20))
-            average_related = 'average_related' in request.form
-
-            # Validation
-            if not target_asset:
-                return render_template('asset_plotter_form.html', error="Target asset is required.", username=session.get('username'))
-            
-            if not start_date or not end_date:
-                return render_template('asset_plotter_form.html', error="Start date and end date are required.", username=session.get('username'))
-
-            # Parse related assets
-            related_assets = []
-            if related_assets_str:
-                related_assets = [asset.strip().upper() for asset in related_assets_str.split(',') if asset.strip()]
-
-            # Map asset names to tickers if needed
-            target_asset = ASSET_MAP.get(target_asset.lower(), target_asset)
-            related_assets = [ASSET_MAP.get(asset.lower(), asset) for asset in related_assets]
-
-            # Parse events
-            events = {}
-            event_dates = request.form.getlist('event_dates[]')
-            event_descriptions = request.form.getlist('event_descriptions[]')
-            
-            for date, desc in zip(event_dates, event_descriptions):
-                if date and desc:
-                    events[date] = desc
-
-            # Create output directory
-            asset_plots_dir = os.path.join(app.static_folder, 'asset_plots')
-            os.makedirs(asset_plots_dir, exist_ok=True)
-
-            # Generate unique filename
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            output_filename = f"asset_plot_{target_asset}_{timestamp}.png"
-            output_path = os.path.join(asset_plots_dir, output_filename)
-
-            # Modify the AssetPlotter function to save to our specific location
-            import matplotlib.pyplot as plt
-            import matplotlib
-            matplotlib.use('Agg')
-
-            # Call the plotting function with our parameters
-            plot_assets_with_highlights(
-                target_asset=target_asset,
-                related_assets=related_assets,
-                start_date=start_date,
-                end_date=end_date,
-                events=events if events else None,
-                average_related=average_related,
-                ma_window=ma_window
-            )
-
-            # Move the generated file to our asset_plots directory
-            default_output = "bloomberg_style_asset_performance.png"
-            if os.path.exists(default_output):
-                import shutil
-                shutil.move(default_output, output_path)
-                
-                # Create URL for the plot
-                plot_url = url_for('static', filename=f'asset_plots/{output_filename}')
-                
-                # Save metadata to database
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                plot_data = {
-                    "type": "Asset_Plotter",
-                    "target_asset": target_asset,
-                    "related_assets": related_assets,
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "ma_window": ma_window,
-                    "average_related": average_related,
-                    "events": events,
-                    "plot_file": f'asset_plots/{output_filename}',
-                    "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                }
-                
-                cursor.execute('''
-                    INSERT INTO analyses (user_id, symbol, analysis_data, timestamp, user_action)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (session['user_id'], target_asset, json.dumps(plot_data), 
-                      datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "Asset Plot Generated"))
-                conn.commit()
-                conn.close()
-
-                return render_template('asset_plotter_form.html',
-                                     success=f"Asset performance chart generated successfully!",
-                                     plot_url=plot_url,
-                                     username=session.get('username'))
-            else:
-                return render_template('asset_plotter_form.html', 
-                                     error="Failed to generate chart. Please try again.", 
-                                     username=session.get('username'))
-
-        except ValueError as e:
-            return render_template('asset_plotter_form.html', 
-                                 error=f"Invalid input: {str(e)}", 
-                                 username=session.get('username'))
-        except Exception as e:
-            app.logger.error(f"Error in asset plotter: {e}")
-            traceback.print_exc()
-            return render_template('asset_plotter_form.html', 
-                                 error=f"An error occurred: {str(e)}", 
-                                 username=session.get('username'))
-
-    return render_template('asset_plotter_form.html', username=session.get('username'))
-
-# --- Add this filter definition ---
-def format_datetime(value, format='%Y-%m-%d %H:%M'):
-    """Formats a datetime object or a string into a desired string format."""
-    if value is None:
-        return "N/A" # Or return an empty string ""
-
-    # Try converting if it's a string (adjust parsing formats if needed)
-    if isinstance(value, str):
-        try:
-            # Attempt ISO format first (common in databases/APIs)
-            # Handle potential 'Z' timezone indicator
-            value = datetime.fromisoformat(value.replace('Z', '+00:00'))
-        except ValueError:
-            try:
-                 # Add other formats your app might use
-                 value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                  # If parsing fails, return the original string
-                  return value
-
-    # Format if it's a datetime object
-    if isinstance(value, datetime):
-        return value.strftime(format)
-
-    # Otherwise, return the value as is
-    return value
-
-app.jinja_env.filters['datetimeformat'] = format_datetime
-
-@app.context_processor
-def inject_now():
-  """Injects the current UTC datetime into the template context."""
-  return {'now': datetime.utcnow()}
-
-def get_db_connection():
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
-    return conn
+def get_general_market_news_articles():
+    mag7_keywords = [f"{ticker} stock" for ticker in MAGNIFICENT_SEVEN]
+    combined_keywords = mag7_keywords + GENERAL_MARKET_KEYWORDS
+    query = format_news_query(combined_keywords)
+    return fetch_articles(query_string=query, page_size=30)
 
 def extract_data_from_block(analysis_block_text):
-    """
-    Extracts specific metrics from a single analysis block text.
-
-    Args:
-        analysis_block_text (str): The text content of one analysis block.
-
-    Returns:
-        dict: A dictionary containing the extracted values, or None if essential fields are missing.
-    """
     extracted_data = {}
-    if not analysis_block_text: # Handle empty input
+    if not analysis_block_text:
         return None
 
-    # --- Extract Basic Info ---
     symbol_match = re.search(r'=== ANALYSIS FOR ([\w.-]+) ===', analysis_block_text, re.IGNORECASE)
     if symbol_match:
-        extracted_data['symbol'] = symbol_match.group(1).upper() # Ensure uppercase
+        extracted_data['symbol'] = symbol_match.group(1).upper()
     else:
-        return None # Cannot proceed without symbol
+        return None
 
     rec_match = re.search(r'Recommendation:\s*(.*?)(?=\n\s*---|===|\Z)', analysis_block_text, re.DOTALL | re.IGNORECASE)
-    if rec_match:
-        extracted_data['recommendation'] = ' '.join(rec_match.group(1).strip().split())
-    else:
-        extracted_data['recommendation'] = 'N/A' # Default if not found
+    extracted_data['recommendation'] = ' '.join(rec_match.group(1).strip().split()) if rec_match else 'N/A'
 
     sigma_match = re.search(r'Sigma Score:\s*([+-]?[\d.]+)', analysis_block_text, re.IGNORECASE)
-    if sigma_match:
-        try:
-            extracted_data['sigma'] = float(sigma_match.group(1)) # Match key used in original analysis.html
-        except ValueError:
-            extracted_data['sigma'] = None
-    else:
-        extracted_data['sigma'] = None
+    extracted_data['sigma'] = float(sigma_match.group(1)) if sigma_match else None
 
     price_match = re.search(r'Current Price:\s*\$?([+-]?[\d.]+)', analysis_block_text, re.IGNORECASE)
-    if price_match:
-         try:
-            extracted_data['price'] = float(price_match.group(1))
-         except ValueError:
-            extracted_data['price'] = None
-    else:
-        extracted_data['price'] = None # Important for calculations
+    extracted_data['price'] = float(price_match.group(1)) if price_match else None
 
-    # Add Change extraction if needed by frontend (matches analysis.html)
     change_match = re.search(r'Change:\s*([+-]?[\d.]+)\s*\(([-+]?[\d.]+)%?\)', analysis_block_text, re.IGNORECASE)
     if change_match:
-        try:
-            extracted_data['daily_change_absolute'] = float(change_match.group(1))
-            extracted_data['daily_change_percent'] = float(change_match.group(2))
-        except ValueError:
-             extracted_data['daily_change_absolute'] = 0.0
-             extracted_data['daily_change_percent'] = 0.0
+        extracted_data['daily_change_absolute'] = float(change_match.group(1))
+        extracted_data['daily_change_percent'] = float(change_match.group(2))
     else:
-         extracted_data['daily_change_absolute'] = 0.0
-         extracted_data['daily_change_percent'] = 0.0
+        extracted_data['daily_change_absolute'] = 0.0
+        extracted_data['daily_change_percent'] = 0.0
 
-    # --- Extract Price Predictions ---
     predictions = {}
-    # Check both possible section headers
     prediction_section_match = re.search(r'=== PRICE PREDICTIONS ===(.*?)(?===|\Z)', analysis_block_text, re.DOTALL | re.IGNORECASE)
-
     if prediction_section_match:
         prediction_text = prediction_section_match.group(1)
         target_30d_match = re.search(r'30-Day Target:\s*\$?([+-]?[\d.]+)\s*\(([-+]?[\d.]+)%\)', prediction_text, re.IGNORECASE)
         if target_30d_match:
-            try:
-                predictions['price_target_30d'] = float(target_30d_match.group(1))
-                predictions['expected_return_30d'] = float(target_30d_match.group(2))
-            except ValueError: pass
+            predictions['price_target_30d'] = float(target_30d_match.group(1))
+            predictions['expected_return_30d'] = float(target_30d_match.group(2))
         target_60d_match = re.search(r'60-Day Target:\s*\$?([+-]?[\d.]+)\s*\(([-+]?[\d.]+)%\)', prediction_text, re.IGNORECASE)
         if target_60d_match:
-             try:
-                predictions['price_target_60d'] = float(target_60d_match.group(1))
-                predictions['expected_return_60d'] = float(target_60d_match.group(2))
-             except ValueError: pass
+            predictions['price_target_60d'] = float(target_60d_match.group(1))
+            predictions['expected_return_60d'] = float(target_60d_match.group(2))
         plot_match = re.search(r'Prediction Plot:\s*(prediction_plots/[^\s]+)', prediction_text, re.IGNORECASE)
         if plot_match:
-            # Get just the relative path from static/
-            relative_plot_path = plot_match.group(1).strip()
-            predictions['plot_path'] = relative_plot_path # Store the relative path
-            # Also add to top level for compatibility if needed by analysis.html logic
-            extracted_data['plot_path'] = relative_plot_path
-
-
-    # If prediction section missing, maybe plot path is elsewhere? (Check main block)
-    if 'plot_path' not in predictions:
-         plot_match_main = re.search(r'Prediction Plot:\s*(prediction_plots/[^\s]+)', analysis_block_text, re.IGNORECASE)
-         if plot_match_main:
-             relative_plot_path = plot_match_main.group(1).strip()
-             predictions['plot_path'] = relative_plot_path
-             extracted_data['plot_path'] = relative_plot_path
-
-
+            predictions['plot_path'] = plot_match.group(1).strip()
+            extracted_data['plot_path'] = predictions['plot_path']
     extracted_data['predictions'] = predictions
 
-    # --- Extract Risk Metrics ---
     risk_metrics = {}
     risk_section_match = re.search(r'=== RISK METRICS ===(.*?)(?===|\Z)', analysis_block_text, re.DOTALL | re.IGNORECASE)
-
     if risk_section_match:
         risk_text = risk_section_match.group(1)
-        drawdown_match = re.search(r'Maximum Drawdown:\s*([+-]?[\d.]+)(%?)', risk_text, re.IGNORECASE) # Capture % optionally
+        drawdown_match = re.search(r'Maximum Drawdown:\s*([+-]?[\d.]+)(%?)', risk_text, re.IGNORECASE)
         if drawdown_match:
-            try:
-                 # Store as float, remove % sign if present
-                 risk_metrics['max_drawdown'] = float(drawdown_match.group(1))
-            except ValueError:
-                 risk_metrics['max_drawdown'] = None
+            risk_metrics['max_drawdown'] = float(drawdown_match.group(1))
         sharpe_match = re.search(r'Sharpe Ratio:\s*([+-]?[\d.]+)', risk_text, re.IGNORECASE)
         if sharpe_match:
-            try:
-                risk_metrics['sharpe'] = float(sharpe_match.group(1)) # Match key used in analysis.html
-            except ValueError: risk_metrics['sharpe'] = None
+            risk_metrics['sharpe'] = float(sharpe_match.group(1))
         kelly_match = re.search(r'Kelly Criterion:\s*([+-]?[\d.]+)', risk_text, re.IGNORECASE)
         if kelly_match:
-             try:
-                risk_metrics['kelly'] = float(kelly_match.group(1)) # Match key used in analysis.html
-             except ValueError: risk_metrics['kelly'] = None
-
-        # Add Risk Level if present (based on analysis.html structure)
-        # Note: Risk Level is not in the txt file format spec or example txt file. Add regex if it exists.
-        risk_level_match = re.search(r'Overall Risk Level:\s*(\w+)', risk_text, re.IGNORECASE) # Example pattern
+            risk_metrics['kelly'] = float(kelly_match.group(1))
+        risk_level_match = re.search(r'Overall Risk Level:\s*(\w+)', risk_text, re.IGNORECASE)
         if risk_level_match:
             risk_metrics['risk_level'] = risk_level_match.group(1).title()
-
     extracted_data['risk_metrics'] = risk_metrics
 
-    # Extract Company Name if available
     company_match = re.search(r'Company:\s*(.*)', analysis_block_text, re.IGNORECASE)
     if company_match:
         extracted_data['company_name'] = company_match.group(1).strip()
 
-    # Extract News Sentiment if available
     news_sentiment_match = re.search(r'News Sentiment Score:\s*([+-]?[\d.]+)', analysis_block_text, re.IGNORECASE)
     if news_sentiment_match:
-         try:
-             extracted_data['news_sentiment_score'] = float(news_sentiment_match.group(1))
-         except ValueError:
-             extracted_data['news_sentiment_score'] = None
-
+        extracted_data['news_sentiment_score'] = float(news_sentiment_match.group(1))
 
     return extracted_data
 
-# --- REPLACE your existing find_most_recent_analysis_from_txt function with this ---
-def find_most_recent_analysis_from_txt(user_id, symbol):
-    """
-    Parses STOCK_ANALYSIS_RESULTS.txt (which contains a file header and a single stock analysis)
-    to find the analysis for the given symbol. Extracts data and checks/updates the database.
-
-    Returns a tuple of (analysis_data, timestamp_str, analysis_id) if found, else (None, None, None).
-    """
+def find_most_recent_analysis_from_txt_and_sync_db(user_id, symbol):
     target_symbol_upper = symbol.upper()
-
-    # 1. File Existence and Reading
-    if not os.path.exists(TXT_FILE):
-        print(f"[INFO] {TXT_FILE} not found.")
-        return None, None, None
+    if not os.path.exists(TXT_FILE): return None, None, None
     try:
         with open(TXT_FILE, 'r', encoding='utf-8') as f:
             content = f.read()
     except Exception as e:
-        print(f"[ERROR] Failed to read {TXT_FILE}: {e}")
-        traceback.print_exc()
+        app.logger.error(f"Failed to read {TXT_FILE}: {e}")
         return None, None, None
 
-    # 2. Timestamp Extraction (Global to the File)
-    file_timestamp_obj = None
-    file_timestamp_str = None
-    
     timestamp_match = re.search(r'Generated on:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})', content)
-    if timestamp_match:
-        timestamp_str_from_file = timestamp_match.group(1)
-        try:
-            file_timestamp_obj = datetime.strptime(timestamp_str_from_file, '%Y-%m-%d %H:%M:%S')
-            file_timestamp_str = timestamp_str_from_file
-        except ValueError:
-            print(f"[WARNING] Could not parse 'Generated on:' timestamp '{timestamp_str_from_file}' from {TXT_FILE}.")
-            file_timestamp_obj = None # Ensure it's None if parsing fails
-
-    if file_timestamp_obj is None: # Fallback if "Generated on:" is missing or unparseable
-        try:
-            mtime = os.path.getmtime(TXT_FILE)
-            file_timestamp_obj = datetime.fromtimestamp(mtime)
-            file_timestamp_str = file_timestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
-            print(f"[WARNING] Using file modification time {file_timestamp_str} as fallback for {TXT_FILE}.")
-        except Exception as e:
-            print(f"[ERROR] Could not get or parse file modification time for {TXT_FILE}: {e}")
-            traceback.print_exc()
-            return None, None, None # Critical if no timestamp can be determined
-
-    # 3. Analysis Content Isolation
-    header_separator = "=================================================="
-    parts = content.split(header_separator, 1)
-    
-    isolated_analysis_content = None
-    if len(parts) > 1:
-        # Content after the first occurrence of the separator, then find the actual analysis block
-        content_after_header = parts[1]
-        # The actual analysis starts with "=== ANALYSIS FOR SYMBOL ==="
-        analysis_block_match = re.search(r'=== ANALYSIS FOR [\w.-]+ ===.*', content_after_header, re.DOTALL)
-        if analysis_block_match:
-            isolated_analysis_content = analysis_block_match.group(0)
-        else:
-            # This case might occur if the file exists but contains only the header
-            # or if the "=== ANALYSIS FOR..." part is missing after the separator.
-            print(f"[ERROR] Analysis block start '=== ANALYSIS FOR ... ===' not found after header separator in {TXT_FILE}.")
-            # Check if the symbol we are looking for is mentioned anywhere, to avoid false negatives if file is malformed
-            if target_symbol_upper not in content.upper():
-                 print(f"[INFO] Target symbol {target_symbol_upper} not found anywhere in {TXT_FILE}. Assuming no analysis present for this symbol.")
-                 return None, None, None # No analysis for this symbol
-            # If symbol is present but structure is wrong, it's an error
-            return None, None, None
-
-
-    if not isolated_analysis_content:
-        # This could happen if the separator is not found, or content_after_header was empty/malformed
-        print(f"[ERROR] Could not isolate analysis content from {TXT_FILE} using separator. File structure might be unexpected.")
-        # Similar check as above: if the symbol isn't in the file at all, it's not an error for *this* symbol.
-        if target_symbol_upper not in content.upper():
-             print(f"[INFO] Target symbol {target_symbol_upper} not found in {TXT_FILE}. Assuming no analysis present.")
-             return None, None, None
-        return None, None, None
-
-    # 4. Data Extraction from Analysis Content
-    analysis_data = extract_data_from_block(isolated_analysis_content)
-
-    if not analysis_data:
-        print(f"[ERROR] Failed to extract data from the isolated analysis content in {TXT_FILE}.")
+    if not timestamp_match:
+        app.logger.warning(f"Could not find 'Generated on:' timestamp in {TXT_FILE}.")
         return None, None, None
     
-    extracted_symbol_upper = analysis_data.get('symbol', '').upper()
-    if not extracted_symbol_upper:
-        print(f"[ERROR] Symbol not found in extracted analysis data from {TXT_FILE}.")
+    file_timestamp_str = timestamp_match.group(1)
+    timestamp_obj = datetime.strptime(file_timestamp_str, '%Y-%m-%d %H:%M:%S')
+    
+    analysis_data = extract_data_from_block(content)
+    if not analysis_data or analysis_data.get('symbol') != target_symbol_upper:
+        app.logger.warning(f"No valid analysis for {target_symbol_upper} found in {TXT_FILE}.")
         return None, None, None
 
-    if extracted_symbol_upper != target_symbol_upper:
-        print(f"[INFO] Extracted symbol '{extracted_symbol_upper}' does not match target '{target_symbol_upper}' in {TXT_FILE}. This file is for a different stock.")
-        return None, None, None # File is for a different stock
-
-    # 5. Database Interaction (Using file_timestamp_str)
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    analysis_id = None
+    existing_analysis = Analysis.query.filter_by(user_id=user_id, symbol=target_symbol_upper, timestamp=timestamp_obj).first()
+    if existing_analysis:
+        app.logger.info(f"Found existing analysis in DB (ID: {existing_analysis.id})")
+        return analysis_data, file_timestamp_str, existing_analysis.id
+    
     try:
-        cursor.execute('''
-            SELECT id
-            FROM analyses
-            WHERE user_id = ? AND symbol = ? AND timestamp = ?
-        ''', (user_id, target_symbol_upper, file_timestamp_str))
-        existing = cursor.fetchone()
-
-        if existing:
-            analysis_id = existing['id']
-            print(f"[INFO] Found existing analysis in DB (ID: {analysis_id}) for {target_symbol_upper} at {file_timestamp_str}")
-        else:
-            # Insert the newly extracted data if it wasn't in the DB for this timestamp
-            analysis_json = json.dumps(analysis_data) # Use the extracted dictionary
-            cursor.execute('''
-                INSERT INTO analyses (user_id, symbol, analysis_data, timestamp)
-                VALUES (?, ?, ?, ?)
-            ''', (user_id, target_symbol_upper, analysis_json, file_timestamp_str))
-            conn.commit()
-            analysis_id = cursor.lastrowid # Get the ID of the newly inserted row
-            print(f"[INFO] Inserted analysis from {TXT_FILE} into DB (ID: {analysis_id}) for {target_symbol_upper} at {file_timestamp_str}")
-
-    except sqlite3.Error as e:
-        print(f"[ERROR] Database error for {target_symbol_upper}: {e}")
-        conn.rollback() # Rollback any changes if error occurs
-        return None, None, None # Return None on DB error
-    finally:
-        conn.close()
-
-    # Return the extracted data, the timestamp string, and the analysis ID
-    return analysis_data, file_timestamp_str, analysis_id
-
-
-def sync_data():
-    print(f"[INFO] Running sync at {datetime.now()}")
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT a.id, a.user_id, a.symbol, u.username
-            FROM analyses a
-            JOIN users u ON a.user_id = u.id
-            WHERE a.timestamp > datetime('now', '-6 hours')
-        ''')
-        recent_analyses = cursor.fetchall()
-        
-        for analysis in recent_analyses:
-            send_pushover_notification(
-                analysis['username'],
-                f"New analysis completed for {analysis['symbol']}",
-                f"View details: https://stockpulse.ngrok.app/analysis/{analysis['id']}"
-            )
-        
-        conn.close()
-        print("[INFO] Sync completed")
+        new_analysis = Analysis(user_id=user_id, symbol=target_symbol_upper, analysis_data=json.dumps(analysis_data), timestamp=timestamp_obj)
+        db.session.add(new_analysis)
+        db.session.commit()
+        app.logger.info(f"Inserted new analysis from {TXT_FILE} into DB (ID: {new_analysis.id})")
+        return analysis_data, file_timestamp_str, new_analysis.id
     except Exception as e:
-        print(f"[ERROR] Sync failed: {e}")
+        db.session.rollback()
+        app.logger.error(f"Database error syncing analysis for {target_symbol_upper}: {e}")
+        return None, None, None
 
 def send_pushover_notification(username, title, message):
+    if not all([PUSHOVER_API_TOKEN, PUSHOVER_USER_KEY]): return
     try:
-        payload = {
-            "token": PUSHOVER_API_TOKEN,
-            "user": PUSHOVER_USER_KEY,
-            "title": f"StockPulse - {username}",
-            "message": message,
-            "url": message if "http" in message else ""
-        }
-        response = requests.post("https://api.pushover.net/1/messages.json", data=payload)
-        if response.status_code == 200:
-            print(f"[INFO] Notification sent to {username}")
-        else:
-            print(f"[ERROR] Failed to send notification: {response.text}")
+        payload = {"token": PUSHOVER_API_TOKEN, "user": PUSHOVER_USER_KEY, "title": f"StockPulse - {username}", "message": message}
+        requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=10)
     except Exception as e:
-        print(f"[ERROR] Notification error: {e}")
-
-def run_scheduler():
-    schedule.every(6).hours.do(sync_data)
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
-
-scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-scheduler_thread.start()
+        app.logger.error(f"Pushover notification failed: {e}")
 
 def run_analysis_in_process(user_id, symbol):
     return run_stock_analysis(user_id=user_id, symbol=symbol)
 
+# ==============================================================================
+# Templating Helpers
+# ==============================================================================
+
+@app.template_filter('datetimeformat')
+def format_datetime_filter(value, format_str='%Y-%m-%d %H:%M'):
+    if not value: return ""
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        except ValueError:
+            try:
+                value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                return value
+    if isinstance(value, datetime):
+        return value.strftime(format_str)
+    return value
+
+@app.context_processor
+def inject_global_vars():
+    return {'now': datetime.utcnow()}
+
+# ==============================================================================
+# Core Routes (Auth, Dashboard)
+# ==============================================================================
+
 @app.route('/')
 def index():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        SELECT id, symbol, timestamp, user_action
-        FROM analyses
-        WHERE user_id = ?
-        ORDER BY timestamp DESC
-    ''', (session['user_id'],))
-    analyses = cursor.fetchall()
-    
-    cursor.execute('''
-        SELECT symbol
-        FROM watchlists
-        WHERE user_id = ?
-    ''', (session['user_id'],))
-    watchlist = [row['symbol'] for row in cursor.fetchall()]
-    
-    conn.close()
-    return render_template('index.html', analyses=analyses, watchlist=watchlist, username=session['username'])
+    if 'user_id' not in session: return redirect(url_for('login'))
+    analyses = Analysis.query.filter_by(user_id=session['user_id']).order_by(Analysis.timestamp.desc()).all()
+    watchlist = get_user_watchlist_tickers(session['user_id'])
+    return render_template('index.html', analyses=analyses, watchlist=watchlist, username=session.get('username'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
-        user = cursor.fetchone()
-        conn.close()
-        
-        if user and check_password_hash(user['password_hash'], password):
-            session['user_id'] = user['id']
-            session['username'] = user['username']
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password_hash, password):
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session.permanent = True
             return redirect(url_for('index'))
         else:
             return render_template('login.html', error="Invalid username or password")
-    
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -784,425 +310,253 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        hashed_password = generate_password_hash(password)
+        new_user = User(username=username, password_hash=hashed_password)
         try:
-            cursor.execute('''
-                INSERT INTO users (username, password_hash)
-                VALUES (?, ?)
-            ''', (username, generate_password_hash(password)))
-            conn.commit()
+            db.session.add(new_user)
+            db.session.commit()
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
-            conn.close()
+        except IntegrityError:
+            db.session.rollback()
             return render_template('register.html', error="Username already exists")
-        finally:
-            conn.close()
-    
     return render_template('register.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)
-    session.pop('username', None)
+    session.clear()
     return redirect(url_for('login'))
+
+# ==============================================================================
+# Feature Routes (Analysis, News, Plotting)
+# ==============================================================================
+
+@app.route('/analyze', methods=['POST'])
+@app.route('/analyze/new', methods=['POST'])
+def analyze():
+    if 'user_id' not in session: return jsonify({'error': 'Not logged in'}), 401
+    symbol = request.form.get('symbol', '').strip().upper()
+    if not symbol: return jsonify({'error': 'Invalid symbol'}), 400
+
+    try:
+        process = multiprocessing.Process(target=run_analysis_in_process, args=(session['user_id'], symbol))
+        process.start()
+        process.join()
+
+        analysis_data, timestamp_str, analysis_id = find_most_recent_analysis_from_txt_and_sync_db(session['user_id'], symbol)
+
+        if analysis_id:
+            send_pushover_notification(session['username'], f"Analysis for {symbol} Completed", f"View your new analysis for {symbol} now.")
+            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id})
+        else:
+            app.logger.error(f"Analysis for {symbol} ran, but failed to sync from TXT to DB.")
+            return jsonify({'error': 'Analysis completed, but failed to save result.'}), 500
+    except Exception as e:
+        app.logger.error(f"Exception in /analyze route for {symbol}: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/analysis/<int:analysis_id>')
 def view_analysis(analysis_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT analysis_data, user_action
-        FROM analyses
-        WHERE id = ? AND user_id = ?
-    ''', (analysis_id, session['user_id']))
-    analysis = cursor.fetchone()
-    conn.close()
-    
-    if not analysis:
-        return "Analysis not found or access denied", 404
-    
-    analysis_data = json.loads(analysis['analysis_data'])
-    user_action = analysis['user_action']
+    if 'user_id' not in session: return redirect(url_for('login'))
+    analysis = Analysis.query.filter_by(id=analysis_id, user_id=session['user_id']).first_or_404()
+    analysis_data = json.loads(analysis.analysis_data)
+    user_action = analysis.user_action
 
-    # Detect Inputs_Cur analysis by type or known fields
     if analysis_data.get('type') == 'Inputs_Cur_Analysis' or 'download_link' in analysis_data or 'excel_path' in analysis_data:
-        # Try to get the Excel file path
         excel_path = analysis_data.get('excel_path') or analysis_data.get('download_link')
-        if not excel_path and 'file' in analysis_data:
-            excel_path = analysis_data['file']
-        # If the path is relative to static, ensure it uses forward slashes
-        if excel_path:
-            excel_path = excel_path.replace('\\', '/')
-            download_link = url_for('static', filename=excel_path)
-        else:
-            download_link = None
+        download_link = url_for('static', filename=excel_path.replace('\\', '/')) if excel_path else None
         return render_template('inputs_cur_form.html', success='Inputs Excel file ready for download.', download_link=download_link, analysis_id=analysis_id, username=session.get('username'))
 
-    # Asset plot: fallback for symbol
-    symbol = analysis_data.get('symbol') or analysis_data.get('target_asset') or 'ASSET'
+    symbol = analysis_data.get('symbol') or analysis_data.get('target_asset') or 'N/A'
+    plot_path = analysis_data.get('predictions', {}).get('plot_path') or analysis_data.get('plot_path')
+    if plot_path: analysis_data['plot_path'] = plot_path
 
-    # --- Ensure prediction plot path is always available if present ---
-    plot_path = None
-    if 'predictions' in analysis_data and analysis_data['predictions'].get('plot_path'):
-        plot_path = analysis_data['predictions']['plot_path']
-    elif 'plot_path' in analysis_data:
-        plot_path = analysis_data['plot_path']
-    if plot_path:
-        analysis_data['plot_path'] = plot_path
-
-    # --- Fetch news for the symbol using NewsAPI (not just today's news) ---
     news = []
     try:
         news_response = newsapi.get_everything(q=symbol, language='en', sort_by='publishedAt', page_size=10)
         if news_response.get('status') == 'ok':
-            for article in news_response.get('articles', []):
-                news.append({
-                    'title': article.get('title'),
-                    'url': article.get('url'),
-                    'published_at': article.get('publishedAt', '')[:10],
-                    'source': article.get('source', {}).get('name', ''),
-                    'sentiment_score': None
-                })
-    except Exception as e:
-        news = []
+            news = news_response.get('articles', [])
+    except Exception:
+        pass # Silently fail on news fetch for this view
     analysis_data['news'] = news
 
     return render_template('analysis.html', analysis=analysis_data, symbol=symbol, user_action=user_action, analysis_id=analysis_id)
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
-    symbol = request.form['symbol'].strip().upper()
-    if not symbol:
-        return jsonify({'error': 'Invalid symbol'}), 400
-    
-    print(f"[DEBUG] User ID in /analyze: {session['user_id']}")
-    analysis_data, timestamp, analysis_id = find_most_recent_analysis_from_txt(session['user_id'], symbol)
-    
-    if analysis_data and timestamp and analysis_id:
-        return jsonify({
-            'has_recent': True,
-            'analysis_id': analysis_id,
-            'timestamp': timestamp
-        })
-    
-    try:
-        process = multiprocessing.Process(target=run_analysis_in_process, args=(session['user_id'], symbol))
-        process.start()
-        process.join() # Wait for the analysis process to complete
 
-        # After the process, try to get the analysis details from the TXT file
-        # find_most_recent_analysis_from_txt will also handle DB insertion/update
-        analysis_data, timestamp_str, analysis_id_from_txt = find_most_recent_analysis_from_txt(session['user_id'], symbol)
+@app.route('/news')
+def news_page():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    watchlist_tickers = get_user_watchlist_tickers(session['user_id'])
+    return render_template('news.html', username=session.get('username'), has_watchlist=bool(watchlist_tickers), watchlist=watchlist_tickers)
 
-        if analysis_id_from_txt:
-            send_pushover_notification(
-                session['username'],
-                f"Analysis completed for {symbol}",
-                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id_from_txt}"
-            )
-            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id_from_txt})
-        else:
-            app.logger.error(f"Analysis for {symbol} (user {session['user_id']}) ran, but find_most_recent_analysis_from_txt failed to return an analysis ID.")
-            return jsonify({'error': 'Analysis ran, but failed to save or process for history.'}), 500
-    except Exception as e:
-        app.logger.error(f"Exception in /analyze route for {symbol} (user {session['user_id']}): {e}")
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+@app.route('/inputs_cur', methods=['GET', 'POST'])
+def inputs_cur_page():
+    if 'user_id' not in session: return redirect(url_for('login'))
 
-@app.route('/analyze/new', methods=['POST'])
-def analyze_new():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
-    symbol = request.form['symbol'].strip().upper()
-    if not symbol:
-        return jsonify({'error': 'Invalid symbol'}), 400
-    
-    try:
-        process = multiprocessing.Process(target=run_analysis_in_process, args=(session['user_id'], symbol))
-        process.start()
-        process.join() # Wait for the analysis process to complete
+    if request.method == 'POST':
+        if not request.form.get('csrf_token') == session.get('csrf_token'):
+            return render_template('inputs_cur_form.html', error="CSRF token validation failed.", username=session.get('username'))
+        
+        ticker_symbol = request.form.get('ticker_symbol', '').strip().upper()
+        if not ticker_symbol:
+            return render_template('inputs_cur_form.html', error="Ticker symbol cannot be empty.", username=session.get('username'))
 
-        # After the process, try to get the analysis details from the TXT file
-        # find_most_recent_analysis_from_txt will also handle DB insertion/update
-        analysis_data, timestamp_str, analysis_id_from_txt = find_most_recent_analysis_from_txt(session['user_id'], symbol)
+        try:
+            template_path = "LIS_Valuation_Empty.xlsx"
+            output_dir = os.path.join(app.static_folder, 'currency_analyses_outputs')
+            os.makedirs(output_dir, exist_ok=True)
+            safe_ticker_filename = ticker_symbol.replace(" ", "_").replace("/", "_")
+            output_file_name = f"{safe_ticker_filename}_Valuation_Model_{time.strftime('%d%m%Y_%H%M')}.xlsx"
+            final_output_path = os.path.join(output_dir, output_file_name)
 
-        if analysis_id_from_txt:
-            send_pushover_notification(
-                session['username'],
-                f"Analysis completed for {symbol}",
-                f"View details: https://stockpulse.ngrok.app/analysis/{analysis_id_from_txt}"
-            )
-            return jsonify({'success': True, 'symbol': symbol, 'analysis_id': analysis_id_from_txt})
-        else:
-            app.logger.error(f"Analysis for {symbol} (user {session['user_id']}) (new) ran, but find_most_recent_analysis_from_txt failed to return an analysis ID.")
-            return jsonify({'error': 'Analysis ran, but failed to save or process for history.'}), 500
-    except Exception as e:
-        app.logger.error(f"Exception in /analyze/new route for {symbol} (user {session['user_id']}): {e}")
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+            run_inputs_cur_analysis(template_path, final_output_path, ticker_symbol, field_map, field_cell_map)
 
-@app.route('/action', methods=['POST'])
-def set_action():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
+            if os.path.exists(final_output_path) and os.path.getsize(final_output_path) > 0:
+                relative_excel_path = os.path.relpath(final_output_path, app.static_folder).replace("\\", "/")
+                download_link = url_for('static', filename=relative_excel_path)
+                return render_template('inputs_cur_form.html', success=f"Analysis for {ticker_symbol} completed!", download_link=download_link, username=session.get('username'))
+            else:
+                return render_template('inputs_cur_form.html', error="Analysis failed to generate the Excel file.", username=session.get('username'))
+        except Exception as e:
+            app.logger.error(f"Error during Inputs_Cur analysis: {e}", exc_info=True)
+            return render_template('inputs_cur_form.html', error=f"An error occurred: {str(e)}", username=session.get('username'))
     
-    analysis_id = request.form['analysis_id']
-    action = request.form['action']
-    
-    if action not in ['strong_buy', 'buy', 'sell', 'strong_sell']:
-        return jsonify({'error': 'Invalid action'}), 400
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        UPDATE analyses
-        SET user_action = ?
-        WHERE id = ? AND user_id = ?
-    ''', (action.replace('_', ' ').title(), analysis_id, session['user_id']))
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'success': True, 'action': action})
+    return render_template('inputs_cur_form.html', username=session.get('username'))
+
+@app.route('/asset_plotter', methods=['GET', 'POST'])
+def asset_plotter_page():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    if request.method == 'POST':
+        if not request.form.get('csrf_token') == session.get('csrf_token'):
+            return jsonify({'error': 'CSRF token validation failed'}), 400
+        try:
+            target_asset = request.form.get('target_asset', '').strip().upper()
+            related_assets_str = request.form.get('related_assets', '').strip()
+            start_date = request.form.get('start_date', '').strip()
+            end_date = request.form.get('end_date', '').strip()
+            ma_window = int(request.form.get('ma_window', 20))
+            average_related = 'average_related' in request.form
+
+            if not all([target_asset, start_date, end_date]):
+                return render_template('asset_plotter_form.html', error="Target asset, start date, and end date are required.", username=session.get('username'))
+            
+            related_assets = [ASSET_MAP.get(a.lower(), a) for a in related_assets_str.split(',') if a.strip()]
+            target_asset_mapped = ASSET_MAP.get(target_asset.lower(), target_asset)
+            
+            events = {date: desc for date, desc in zip(request.form.getlist('event_dates[]'), request.form.getlist('event_descriptions[]')) if date and desc}
+
+            asset_plots_dir = os.path.join(app.static_folder, 'asset_plots')
+            os.makedirs(asset_plots_dir, exist_ok=True)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            output_filename = f"asset_plot_{target_asset_mapped}_{timestamp}.png"
+            output_path = os.path.join(asset_plots_dir, output_filename)
+
+            plot_assets_with_highlights(target_asset_mapped, related_assets, start_date, end_date, events or None, average_related, ma_window)
+
+            default_output = "bloomberg_style_asset_performance.png"
+            if os.path.exists(default_output):
+                shutil.move(default_output, output_path)
+                plot_url = url_for('static', filename=f'asset_plots/{output_filename}')
+                
+                plot_data = {"type": "Asset_Plotter", "target_asset": target_asset_mapped, "related_assets": related_assets, "start_date": start_date, "end_date": end_date, "ma_window": ma_window, "average_related": average_related, "events": events, "plot_file": f'asset_plots/{output_filename}'}
+                new_plot_analysis = Analysis(user_id=session['user_id'], symbol=target_asset_mapped, analysis_data=json.dumps(plot_data), user_action="Asset Plot Generated")
+                db.session.add(new_plot_analysis)
+                db.session.commit()
+
+                return render_template('asset_plotter_form.html', success="Chart generated successfully!", plot_url=plot_url, username=session.get('username'))
+            else:
+                return render_template('asset_plotter_form.html', error="Failed to generate chart.", username=session.get('username'))
+
+        except Exception as e:
+            app.logger.error(f"Error in asset plotter: {e}", exc_info=True)
+            return render_template('asset_plotter_form.html', error=f"An error occurred: {str(e)}", username=session.get('username'))
+
+    return render_template('asset_plotter_form.html', username=session.get('username'))
+
+# ==============================================================================
+# API and AJAX Routes
+# ==============================================================================
 
 @app.route('/watchlist/add', methods=['POST'])
 def add_to_watchlist():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
-    symbol = request.form['symbol'].strip().upper()
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    if 'user_id' not in session: return jsonify({'error': 'Not logged in'}), 401
+    symbol = request.form.get('symbol', '').strip().upper()
+    if not symbol: return jsonify({'error': 'Invalid symbol'}), 400
     try:
-        cursor.execute('''
-            INSERT INTO watchlists (user_id, symbol)
-            VALUES (?, ?)
-        ''', (session['user_id'], symbol))
-        conn.commit()
+        new_item = Watchlist(user_id=session['user_id'], symbol=symbol)
+        db.session.add(new_item)
+        db.session.commit()
         return jsonify({'success': True, 'symbol': symbol})
-    except sqlite3.IntegrityError:
+    except IntegrityError:
+        db.session.rollback()
         return jsonify({'error': 'Symbol already in watchlist'}), 400
-    finally:
-        conn.close()
 
 @app.route('/watchlist/remove', methods=['POST'])
 def remove_from_watchlist():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
-    symbol = request.form['symbol'].strip().upper()
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        DELETE FROM watchlists
-        WHERE user_id = ? AND symbol = ?
-    ''', (session['user_id'], symbol))
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'success': True, 'symbol': symbol})
+    if 'user_id' not in session: return jsonify({'error': 'Not logged in'}), 401
+    symbol = request.form.get('symbol', '').strip().upper()
+    if not symbol: return jsonify({'error': 'Invalid symbol'}), 400
+    item = Watchlist.query.filter_by(user_id=session['user_id'], symbol=symbol).first()
+    if item:
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({'success': True, 'symbol': symbol})
+    return jsonify({'error': 'Symbol not found in watchlist'}), 404
 
 @app.route('/analysis/delete', methods=['POST'])
 def delete_analysis():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
-    analysis_id = request.form['analysis_id']
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # First, check if the analysis belongs to the user
-    cursor.execute('''
-        SELECT id, symbol FROM analyses 
-        WHERE id = ? AND user_id = ?
-    ''', (analysis_id, session['user_id']))
-    
-    analysis = cursor.fetchone()
-    if not analysis:
-        conn.close()
-        return jsonify({'error': 'Analysis not found or access denied'}), 404
-    
-    # If found and belongs to user, delete it
-    cursor.execute('''
-        DELETE FROM analyses
-        WHERE id = ? AND user_id = ?
-    ''', (analysis_id, session['user_id']))
-    
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'success': True, 'analysis_id': analysis_id, 'symbol': analysis['symbol']})
+    if 'user_id' not in session: return jsonify({'error': 'Not logged in'}), 401
+    analysis_id = request.form.get('analysis_id')
+    analysis = Analysis.query.filter_by(id=analysis_id, user_id=session['user_id']).first()
+    if analysis:
+        symbol = analysis.symbol
+        db.session.delete(analysis)
+        db.session.commit()
+        return jsonify({'success': True, 'analysis_id': analysis_id, 'symbol': symbol})
+    return jsonify({'error': 'Analysis not found or access denied'}), 404
 
-@app.route('/share/<int:analysis_id>')
-def share_analysis(analysis_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    share_url = f"https://stockpulse.ngrok.app/analysis/{analysis_id}"
-    return jsonify({'share_url': share_url})
+@app.route('/api/news_articles')
+def api_news_articles():
+    if 'user_id' not in session: return jsonify({'error': 'Not logged in'}), 401
+    news_type = request.args.get('type', 'general')
+    user_id = session['user_id']
+    articles = []
+    if news_type == 'watchlist':
+        if get_user_watchlist_tickers(user_id):
+            articles = get_watchlist_news_articles(user_id)
+        else: # Fallback to general if watchlist is empty
+            articles = get_general_market_news_articles()
+    else:
+        articles = get_general_market_news_articles()
+    return jsonify(articles=articles)
 
 @app.route('/api/stock-prices', methods=['POST'])
 def get_stock_prices():
-    """API endpoint to fetch real-time stock prices from Yahoo Finance"""
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
+    if 'user_id' not in session: return jsonify({'error': 'Not logged in'}), 401
     symbols = request.form.getlist('symbols[]')
-    if not symbols and 'symbols' in request.form:
-        # Handle case where symbols might be sent as a single comma-separated string
-        symbols = request.form['symbols'].split(',')
+    if not symbols: return jsonify({'error': 'No symbols provided'}), 400
     
-    if not symbols:
-        return jsonify({'error': 'No symbols provided'}), 400
-    
-    # Clean up symbols
-    symbols = [s.strip().upper() for s in symbols if s.strip()]
-    
-    # Dictionary to store prices
     prices = {}
-    
     try:
-        # Create a single string of symbols for batch request
-        symbols_str = ' '.join(symbols)
-        
-        # Fetch data for all symbols at once using yfinance
-        # This is more efficient than fetching them individually
-        print(f"[INFO] Fetching real-time data for: {symbols_str}")
+        symbols_str = ' '.join([s.strip().upper() for s in symbols if s.strip()])
         tickers_data = yf.Tickers(symbols_str)
-        
         for symbol in symbols:
-            try:
-                # Get ticker data for this symbol
-                ticker_info = tickers_data.tickers[symbol]
-                
-                # Get current price data
-                ticker_history = ticker_info.history(period="2d")
-                
-                if not ticker_history.empty:
-                    # Get today's and yesterday's close prices
-                    if len(ticker_history) >= 2:
-                        current_price = ticker_history['Close'].iloc[-1]
-                        prev_close = ticker_history['Close'].iloc[-2]
-                        
-                        # Calculate change
-                        change_abs = float(current_price - prev_close)
-                        change_percent = float((change_abs / prev_close) * 100)
-                    else:
-                        # If only one day of data is available
-                        current_price = ticker_history['Close'].iloc[-1]
-                        change_abs = 0.0
-                        change_percent = 0.0
-                    
-                    prices[symbol] = {
-                        'price': float(current_price),
-                        'change_absolute': change_abs,
-                        'change_percent': change_percent
-                    }
-                    
-                    print(f"[INFO] Fetched price for {symbol}: ${current_price:.2f} ({change_percent:.2f}%)")
-                else:
-                    # No data available
-                    print(f"[WARNING] No price data found for {symbol}")
-            except Exception as ticker_error:
-                print(f"[ERROR] Error fetching data for {symbol}: {ticker_error}")
-                # Continue with other symbols even if one fails
-    
+            ticker_info = tickers_data.tickers.get(symbol.upper())
+            if ticker_info:
+                hist = ticker_info.history(period="2d")
+                if not hist.empty:
+                    current_price = hist['Close'].iloc[-1]
+                    prev_close = hist['Close'].iloc[-2] if len(hist) > 1 else current_price
+                    change_abs = current_price - prev_close
+                    change_percent = (change_abs / prev_close * 100) if prev_close else 0
+                    prices[symbol] = {'price': float(current_price), 'change_absolute': float(change_abs), 'change_percent': float(change_percent)}
     except Exception as e:
-        print(f"[ERROR] Failed to fetch stock prices: {e}")
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-    
-    # If we couldn't get any prices from Yahoo Finance, try using the cached data from the analysis file
-    if not prices:
-        print("[WARNING] No prices fetched from Yahoo Finance, falling back to cached data")
-        try:
-            prices = get_cached_prices_from_file(symbols)
-        except Exception as cache_error:
-            print(f"[ERROR] Failed to get cached prices: {cache_error}")
-    
-    return jsonify({
-        'success': True,
-        'prices': prices
-    })
+        app.logger.error(f"yfinance failed to fetch prices: {e}")
 
-def get_cached_prices_from_file(symbols):
-    """Fallback function to get cached prices from the analysis file"""
-    prices = {}
-    
-    if os.path.exists(TXT_FILE):
-        with open(TXT_FILE, 'r') as f:
-            content = f.read()
-        
-        # Split by either old format or new format sections
-        if '===== STOCK_ANALYSIS_RESULTS =====' in content:
-            analysis_blocks = content.split('===== STOCK_ANALYSIS_RESULTS =====')
-        else:
-            analysis_blocks = content.split('==================================================')
-        
-        for symbol in symbols:
-            # Try to find the most recent analysis for each symbol
-            symbol_blocks = []
-            
-            for block in analysis_blocks:
-                # Check both new and old format symbol headers
-                symbol_match = re.search(r'=== ANALYSIS FOR (\w+) ===', block)
-                
-                if symbol_match and symbol_match.group(1).upper() == symbol:
-                    # Try to extract timestamp if available (from newer format)
-                    timestamp_match = re.search(r'Generated on: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', block)
-                    timestamp = timestamp_match.group(1) if timestamp_match else None
-                    
-                    symbol_blocks.append((block, timestamp))
-            
-            if symbol_blocks:
-                # Sort by timestamp if available, otherwise use the last one found
-                if any(block[1] for block in symbol_blocks):
-                    symbol_blocks = [block for block in symbol_blocks if block[1]]
-                    symbol_blocks.sort(key=lambda x: x[1], reverse=True)
-                
-                # Use the most recent or last block
-                most_recent_block = symbol_blocks[0][0]
-                
-                # Try both formats for price extraction
-                price_match = re.search(r'Current Price: \$?([\d.]+)', most_recent_block)
-                
-                # Also try to find change data in both formats
-                change_match = re.search(r'Change: ([+-]?[\d.]+) \(([-+]?[\d.]+)%\)', most_recent_block)
-                
-                if price_match:
-                    price = float(price_match.group(1))
-                    
-                    # Default values
-                    change_abs = 0.0
-                    change_percent = 0.0
-                    
-                    if change_match:
-                        try:
-                            change_abs = float(change_match.group(1))
-                            change_percent = float(change_match.group(2))
-                        except (ValueError, IndexError):
-                            # If there's an error parsing change values, keep defaults
-                            pass
-                    
-                    prices[symbol] = {
-                        'price': price,
-                        'change_absolute': change_abs,
-                        'change_percent': change_percent
-                    }
-                    
-                    print(f"[INFO] Using cached price for {symbol}: ${price}")
-    
-    return prices
+    return jsonify({'success': True, 'prices': prices})
 
+# ==============================================================================
+# Main Execution
+# ==============================================================================
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    # For production, use a WSGI server like Gunicorn.
+    # Example: gunicorn --bind 0.0.0.0:8000 server:app
+    app.run(host='127.0.0.1', port=5000, debug=True)
