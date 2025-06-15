@@ -21,7 +21,13 @@
 
  PARA DE APAGAR OS MEUS FICHEIROS
 """
-import blpapi
+try:
+    import blpapi
+    BLPAPI_AVAILABLE = True
+except ImportError:
+    BLPAPI_AVAILABLE = False
+    print("[WARNING] Bloomberg API (blpapi) not found. Inputs_Cur.py functionality requiring Bloomberg will be unavailable.")
+
 import openpyxl
 import shutil
 import os
@@ -29,6 +35,9 @@ import time
 from datetime import datetime
 
 def setup_bloomberg_session(ticker_symbol):
+    if not BLPAPI_AVAILABLE:
+        print("⚠️ Bloomberg API (blpapi) is not installed. Cannot setup session.")
+        return None
     options = blpapi.SessionOptions()
     options.setServerHost("localhost")
     options.setServerPort(8194)
@@ -46,6 +55,22 @@ def setup_bloomberg_session(ticker_symbol):
     return session
 
 def fetch_bloomberg_data(session, ticker, fields, field_to_name_map, start_year=2014, end_year=2024, timeout=30):
+    if not BLPAPI_AVAILABLE:
+        print("⚠️ Bloomberg API (blpapi) is not available. Cannot fetch Bloomberg data.")
+        data_unavailable = {field: {} for field in fields}
+        for field_id_ua in fields:
+            for year_ua in range(start_year, end_year + 1):
+                data_unavailable[field_id_ua][year_ua] = "N/A (Bloomberg Unavailable)"
+        return data_unavailable
+
+    if not session: # If session setup failed earlier
+        print("⚠️ No valid Bloomberg session. Cannot fetch data.")
+        data_unavailable_ns = {field: {} for field in fields}
+        for field_id_ns in fields:
+            for year_ns in range(start_year, end_year + 1):
+                data_unavailable_ns[field_id_ns][year_ns] = "N/A (No Session)"
+        return data_unavailable_ns
+
     if not fields:
         print("ℹ️ Just a heads up: No specific data fields were requested for this round.")
         return {}
@@ -68,12 +93,6 @@ def fetch_bloomberg_data(session, ticker, fields, field_to_name_map, start_year=
         print(f"🌍 Looks like a non-US stock ({ticker}, Country: {country_code}). I'll ask Bloomberg for data in USD to keep things consistent.")
         
         request.set("currency", "USD")
-
-        # USD currency override
-        #overrides = request.getElement("overrides")
-        #override = overrides.appendElement()
-        #override.setElement("fieldId", "EQY_FUND_CRNCY")
-        #override.setElement("value", "USD")
         
     elif country_code == "US":
         print(f"🇺🇸 This stock ({ticker}) is US-based. Data should come in USD by default.")
@@ -496,72 +515,79 @@ def populate_valuation_model(template_path, output_path, ticker_symbol, current_
             pass
 
 
-    if not all_bdh_fields_to_fetch_codes:
+    if not BLPAPI_AVAILABLE and not all_bdh_fields_to_fetch_codes: # Check if blpapi is needed but not available
+        print("🤔 Bloomberg API is not available, and no Bloomberg data fields (BDH fields) are listed. Proceeding without Bloomberg data.")
+        # Proceed to fill with N/A or defaults if blpapi is not available but fields were expected
+    elif not all_bdh_fields_to_fetch_codes:
         print("🤔 It seems no Bloomberg data fields (BDH fields) are listed in the configuration. I can't fetch anything without them. Please check the 'field_map'.")
-        wb.save(output_path) 
-        return
+        # Fall through to writing N/A for these fields
 
-    print(f"\n🚀 Phase 1: Starting data hunt for ticker: {ticker_symbol}")
-    print(f"📊 I need to find {len(all_bdh_fields_to_fetch_codes)} unique pieces of data from Bloomberg.")
+    if BLPAPI_AVAILABLE and all_bdh_fields_to_fetch_codes:
+        print(f"\n🚀 Phase 1: Starting data hunt for ticker: {ticker_symbol}")
+        print(f"📊 I need to find {len(all_bdh_fields_to_fetch_codes)} unique pieces of data from Bloomberg.")
 
-    field_batches = batch_fields(list(all_bdh_fields_to_fetch_codes), batch_size=25)
-    print(f"📦 I've split this into {len(field_batches)} smaller batches to ask Bloomberg.")
+        field_batches = batch_fields(list(all_bdh_fields_to_fetch_codes), batch_size=25)
+        print(f"📦 I've split this into {len(field_batches)} smaller batches to ask Bloomberg.")
 
-    session = None 
-    try:
-        session = setup_bloomberg_session(ticker_symbol)
-        if not session:
-            print(f"❌ Major setback: Failed to start the Bloomberg session for {ticker_symbol}. I can't fetch any data. Please check your Bloomberg Terminal connection.")
-            
-            raise ConnectionError("Failed to establish Bloomberg session.")
+        session = None
+        try:
+            session = setup_bloomberg_session(ticker_symbol)
+            if not session: # This check is now more robust due to changes in setup_bloomberg_session
+                print(f"❌ Major setback: Failed to start the Bloomberg session for {ticker_symbol}. I can't fetch any data. Please check your Bloomberg Terminal connection or if blpapi is installed.")
+                raise ConnectionError("Failed to establish Bloomberg session.")
 
-        for batch_idx, current_batch_bberg_codes in enumerate(field_batches):
-            print(f"    🔎 Batch {batch_idx + 1} of {len(field_batches)}: Asking for {len(current_batch_bberg_codes)} specific items.")
+            for batch_idx, current_batch_bberg_codes in enumerate(field_batches):
+                print(f"    🔎 Batch {batch_idx + 1} of {len(field_batches)}: Asking for {len(current_batch_bberg_codes)} specific items.")
 
-            batch_data_fetched = fetch_bloomberg_data(
-                session,
-                ticker_symbol,
-                current_batch_bberg_codes,
-                global_bberg_code_to_excel_name_map,
-                start_year=data_years[0],
-                end_year=data_years[-1]
-            )
+                batch_data_fetched = fetch_bloomberg_data( # This function also checks BLPAPI_AVAILABLE and session
+                    session,
+                    ticker_symbol,
+                    current_batch_bberg_codes,
+                    global_bberg_code_to_excel_name_map,
+                    start_year=data_years[0],
+                    end_year=data_years[-1]
+                )
 
-            if batch_data_fetched is None: 
-                print(f"    ❗ Critical Error: Something went wrong with the Bloomberg connection during batch {batch_idx + 1}. Stopping further data fetching.")
-                raise ConnectionAbortedError("Bloomberg session terminated or critical fetch error during a batch.")
+                if batch_data_fetched is None:
+                    print(f"    ❗ Critical Error: Something went wrong with the Bloomberg connection during batch {batch_idx + 1}. Stopping further data fetching.")
+                    raise ConnectionAbortedError("Bloomberg session terminated or critical fetch error during a batch.")
 
 
-            elif batch_data_fetched: 
-                for field_code, yearly_data in batch_data_fetched.items():
-                    if field_code not in all_fetched_bdh_data:
-                        all_fetched_bdh_data[field_code] = {}
-                    for year, value in yearly_data.items():
-                        if value is not None:
-                            all_fetched_bdh_data[field_code][year] = value
-                        elif year not in all_fetched_bdh_data[field_code]:
-                            all_fetched_bdh_data[field_code][year] = value 
+                elif batch_data_fetched:
+                    for field_code, yearly_data in batch_data_fetched.items():
+                        if field_code not in all_fetched_bdh_data:
+                            all_fetched_bdh_data[field_code] = {}
+                        for year, value in yearly_data.items():
+                            if value is not None: # Only update if we got a real value
+                                all_fetched_bdh_data[field_code][year] = value
+                            # If value is None but year not present, it means it was missing from this fetch
+                            elif year not in all_fetched_bdh_data[field_code]:
+                                all_fetched_bdh_data[field_code][year] = value # Store the None/N/A
 
-                print(f"    👍 Success! Got data for batch {batch_idx + 1}. Processed {len(batch_data_fetched)} field types from this batch.")
-            else:
-                print(f"    ℹ️ Batch {batch_idx + 1} didn't return any data. This could be because all fields in it were invalid or no data was available.")
+                    print(f"    👍 Success! Got data for batch {batch_idx + 1}. Processed {len(batch_data_fetched)} field types from this batch.")
+                else: # batch_data_fetched might be an empty dict if all fields in batch were problematic or if blpapi not available
+                    print(f"    ℹ️ Batch {batch_idx + 1} didn't return any data. This could be because all fields in it were invalid, no data was available, or Bloomberg API is not available.")
 
-    except ConnectionError as e_conn_err: 
-        print(f"❌ Connection Error: {e_conn_err}")
-    except ConnectionAbortedError as e_conn_abort: 
-        print(f"❌ Connection Aborted: {e_conn_abort}")
-    except Exception as e_fetch:
-        print(f"❌ An unexpected error occurred while trying to get data from Bloomberg: {e_fetch}")
+        except ConnectionError as e_conn_err:
+            print(f"❌ Connection Error: {e_conn_err}")
+        except ConnectionAbortedError as e_conn_abort:
+            print(f"❌ Connection Aborted: {e_conn_abort}")
+        except Exception as e_fetch:
+            print(f"❌ An unexpected error occurred while trying to get data from Bloomberg: {e_fetch}")
 
-    finally:
-        if session:
-            try:
-                session.stop()
-                print("🔌 Bloomberg session stopped. All done with data fetching (or tried our best!).")
-            except Exception as e_stop:
-                print(f"⚠️ Minor issue while trying to stop the Bloomberg session: {e_stop}")
+        finally:
+            if session: # session might be None if setup_bloomberg_session failed
+                try:
+                    session.stop()
+                    print("🔌 Bloomberg session stopped. All done with data fetching (or tried our best!).")
+                except Exception as e_stop:
+                    print(f"⚠️ Minor issue while trying to stop the Bloomberg session: {e_stop}")
+        print(f"\n🏁 Phase 1 Complete: Finished all attempts to fetch data from Bloomberg.")
+    elif not BLPAPI_AVAILABLE and all_bdh_fields_to_fetch_codes:
+        print(f"\n⚠️ Phase 1 Skipped: Bloomberg API (blpapi) is not available. All Bloomberg-dependent fields will be marked 'N/A (Bloomberg Unavailable)'.")
+        for bdh_field_code in all_bdh_fields_to_fetch_codes:
+            all_fetched_bdh_data[bdh_field_code] = {year: "N/A (Bloomberg Unavailable)" for year in data_years}
 
-    print(f"\n🏁 Phase 1 Complete: Finished all attempts to fetch data from Bloomberg.")
 
     print(f"\n🧮 Phase 2: Calculating any extra metrics (like DSO)...")
     all_derived_data = calculate_derived_metrics(all_fetched_bdh_data, start_year=data_years[0], end_year=data_years[-1])
@@ -593,8 +619,10 @@ def populate_valuation_model(template_path, output_path, ticker_symbol, current_
                 print(f"🤔 The item '{excel_name}' is marked as Bloomberg data (BDH), but has no Bloomberg field code. Skipping.")
                 continue
             data_source_for_item = all_fetched_bdh_data.get(bberg_field_code, {})
-            if not data_source_for_item:
+            if not data_source_for_item and BLPAPI_AVAILABLE : # Only print if blpapi was available but no data
                 print(f"💨 No data was fetched for '{excel_name}' (Bloomberg code: {bberg_field_code}). It will be marked N/A.")
+            elif not data_source_for_item and not BLPAPI_AVAILABLE: # If blpapi not available, it's expected
+                 data_source_for_item = {year: "N/A (Bloomberg Unavailable)" for year in data_years}
 
 
         elif source_type == "DERIVED":
@@ -613,23 +641,25 @@ def populate_valuation_model(template_path, output_path, ticker_symbol, current_
         for i, year in enumerate(data_years):
             cell_ref = target_cells_for_item[i]
             raw_value = data_source_for_item.get(year)
-
-            display_value = raw_value 
-            #skibidi toilet
             
             if raw_value is None: 
-                display_value = "0" 
+                display_value = "0" # Default to "0" if None (missing data from fetch)
+            elif isinstance(raw_value, str) and "N/A" in raw_value:
+                display_value = raw_value # Keep "N/A" strings as is
+            elif isinstance(raw_value, (int, float)):
+                display_value = raw_value
+            else:
+                display_value = str(raw_value)
+
 
             try:
-                if isinstance(raw_value, (int, float)):
-                    ws[cell_ref] = raw_value
+                if isinstance(display_value, (int, float)):
+                    ws[cell_ref] = display_value
                     ws[cell_ref].number_format = "#,##0.000" 
                     if "EPS" in excel_name or "DSO" in excel_name or "Rate" in excel_name: 
                         ws[cell_ref].number_format = "0.00"
-                elif isinstance(raw_value, str): 
-                    ws[cell_ref] = raw_value
-                else: 
-                    ws[cell_ref] = "0" if raw_value is None else str(raw_value) 
+                else: # Handles strings like "N/A..." or "0"
+                    ws[cell_ref] = display_value
             except Exception as e_write_cell:
                 print(f"⚠️ Problem writing to cell {cell_ref} for '{excel_name}': {e_write_cell}")
                 ws[cell_ref] = "Error writing"
@@ -701,9 +731,11 @@ if __name__ == "__main__":
     except ConnectionAbortedError as e_aborted: 
         print(f"❌ CRITICAL ERROR: The connection to Bloomberg was aborted during data fetching. {e_aborted}")
         print("    Some data might be missing. Please check the output file and consider re-running.")
-    except blpapi.exception.BlpException as e_blp: 
-        print(f"❌ CRITICAL BLPAPI ERROR: A Bloomberg specific error occurred: {e_blp}")
-        print("    This could be due to various reasons like invalid security, field, or service issues.")
+    except (NameError if not BLPAPI_AVAILABLE else blpapi.exception.BlpException) as e_blp: # Handle NameError if blpapi not defined
+        if BLPAPI_AVAILABLE: # Only print as BlpException if it was available
+             print(f"❌ CRITICAL BLPAPI ERROR: A Bloomberg specific error occurred: {e_blp}")
+             print("    This could be due to various reasons like invalid security, field, or service issues.")
+        # If BLPAPI_AVAILABLE is False, the earlier warnings would have covered it.
     except Exception as e_main:
         print(f"❌ AN UNEXPECTED CRITICAL ERROR occurred: {e_main}")
         import traceback

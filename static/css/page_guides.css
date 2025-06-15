@@ -1,0 +1,39 @@
+/* static/css/page_guides.css */
+
+.page-guide-icon-container {
+    position: fixed; /* Or absolute, depending on layout */
+    top: 80px; /* Adjust as needed, consider navbar height */
+    right: 20px; /* Adjust as needed */
+    z-index: 1050; /* Ensure it's above other content but below modals */
+}
+
+.page-guide-trigger {
+    font-size: 1.5rem; /* Adjust size */
+    color: var(--primary); /* Use theme's primary color */
+    cursor: pointer;
+    padding: 8px; /* Slightly more padding for better click area */
+    border-radius: 50%;
+    background-color: var(--bg-card);
+    box-shadow: var(--shadow-card);
+    transition: color 0.3s, transform 0.3s, background-color 0.3s, box-shadow 0.3s;
+}
+
+.page-guide-trigger:hover {
+    color: var(--secondary); /* Use theme's secondary color on hover */
+    transform: scale(1.1);
+    background-color: var(--bg-hover);
+    box-shadow: var(--shadow-card-hover);
+}
+
+/* Ensure dark theme compatibility for icon container elements if they don't inherit properly */
+[data-theme="dark"] .page-guide-trigger {
+    color: var(--primary);
+    background-color: var(--bg-card);
+    box-shadow: var(--shadow-card);
+}
+
+[data-theme="dark"] .page-guide-trigger:hover {
+    color: var(--secondary);
+    background-color: var(--bg-hover);
+    box-shadow: var(--shadow-card-hover);
+}

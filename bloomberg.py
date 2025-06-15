@@ -1,12 +1,24 @@
-import blpapi
 import time # Add time import if not already present
+
+# Attempt to import blpapi, but make it optional
+try:
+    import blpapi
+    BLPAPI_AVAILABLE = True
+except ImportError:
+    BLPAPI_AVAILABLE = False
+    print("[WARNING] Bloomberg API (blpapi) not found. News sentiment will not be available via Bloomberg.")
+
 #178e06846327414aa7440357aeabcb3e
 
 def get_normalized_news_sentiment(ticker_symbol):
     """
     Fetches and normalizes news sentiment for a given ticker from Bloomberg.
-    Returns a sentiment score (0-1) or None if connection fails.
+    Returns a sentiment score (0-1) or None if connection fails or blpapi is not available.
     """
+    if not BLPAPI_AVAILABLE:
+        print(f"[INFO] Bloomberg API not available, skipping sentiment check for {ticker_symbol}.")
+        return None
+
     options = blpapi.SessionOptions()
     options.setServerHost("localhost")
     options.setServerPort(8194)

@@ -9,8 +9,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ range(1000, 9999) | random }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/page_guides.css') }}">
 </head>
 <body>
+    <div class="page-guide-icon-container">
+        <i class="fas fa-info-circle page-guide-trigger" data-modal-id="assetPlotterGuideModal" title="About this page"></i>
+    </div>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">Quant<span>Pulse</span></a>
@@ -295,6 +299,27 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/page_guides.js') }}"></script>
+
+    <!-- Page Specific Guide Modal -->
+    <div class="modal fade" id="assetPlotterGuideModal" tabindex="-1" aria-labelledby="assetPlotterGuideModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assetPlotterGuideModalLabel"><i class="fas fa-info-circle me-2"></i>Guide: Asset Plotter Tool</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Welcome to the Asset Plotter! Here you can visualize historical price data and technical indicators for various assets.</p>
+                    <p>Enter a stock symbol, select the desired date range, and choose technical indicators to plot. The generated chart will help you identify trends and patterns.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Set default dates
         document.addEventListener('DOMContentLoaded', function() {

@@ -1,0 +1,7 @@
+[WARNING] Bloomberg API (blpapi) not found. News sentiment will not be available via Bloomberg.
+[WARNING] No GPU found, using CPU instead
+[DEBUG] Certificate path: /usr/local/lib/python3.10/dist-packages/certifi/cacert.pem
+[DEBUG] Certificate exists: True
+[WARNING] Bloomberg API (blpapi) not found. Inputs_Cur.py functionality requiring Bloomberg will be unavailable.
+ * Serving Flask app 'server'
+ * Debug mode: on

@@ -2,142 +2,148 @@
 
 /* --- Consolidated Professional Styles --- */
 :root {
-    /* Light Theme (Default) */
-    --primary: #0d3b66;         /* Deep Blue */
-    --secondary: #4a96d3;       /* Medium Blue */
-    --accent: #5bc0be;          /* Teal Accent */
-    --success: #2ac769;          /* Green */
-    --danger: #ee6c4d;           /* Red/Orange */
-    --warning: #ffd166;          /* Yellow */
-    --light: #f8f9fa;           /* Light Gray */
-    --dark: #212529;            /* Dark Gray */
-    --gray: #6c757d;            /* Medium Gray */
-    --white: #ffffff;
+    /* Light Theme (Default) - Neon Blue/White */
+    --primary: #00FFFF;         /* Bright Neon Blue */
+    --secondary: #7DFDFE;       /* Lighter Neon Blue/Cyan */
+    --accent: #FF00FF;          /* Vibrant Pink */
+    --success: #39FF14;          /* Neon Lime Green */
+    --danger: #FF1D15;           /* Neon Red (similar to dark mode primary for consistency) */
+    --warning: #FFF01F;          /* Neon Yellow */
+    --light: #E0E0E0;           /* Very Light Gray (almost white) */
+    --dark: #1A1A1A;            /* Dark Gray for text */
+    --gray: #888888;            /* Medium Gray */
+    --white: #FFFFFF;
 
     /* UI Elements - Light */
-    --bg-body: #f5f7fa;         /* Very Light Background */
+    --bg-body: var(--white);         /* White Background */
     --bg-card: var(--white);
     --bg-header: var(--white);
-    --bg-hover: rgba(74, 150, 211, 0.05); /* Light hover */
+    --bg-hover: rgba(0, 255, 255, 0.1); /* Light Neon Blue hover */
 
     /* Text - Light */
-    --text-main: #2c3e50;       /* Dark Text */
+    --text-main: var(--dark);       /* Dark Text for contrast */
     --text-muted: var(--gray);
     --text-heading: var(--primary);
-    --text-on-primary: var(--white); /* Text on primary bg */
-    --text-on-dark: var(--white); /* Text on dark bg (like ticker tape) */
+    --text-on-primary: var(--dark); /* Dark text on neon blue */
+    --text-on-dark: #F5F5F5;    /* Light text on dark backgrounds */
     --text-link: var(--primary);
     --text-link-hover: var(--secondary);
 
     /* Borders - Light */
-    --border-color: #dee2e6;
-    --border-card: rgba(0,0,0,0.08);
-    --border-header: rgba(0,0,0,0.05);
+    --border-color: #C0C0C0; /* Lighter gray border */
+    --border-card: rgba(0, 255, 255, 0.3); /* Neon blue border */
+    --border-header: rgba(0, 255, 255, 0.2); /* Lighter neon blue border */
 
-    /* Shadows - Light */
-    --shadow-card: 0 4px 12px rgba(0,0,0,0.05);
-    --shadow-card-hover: 0 8px 16px rgba(0,0,0,0.07);
+    /* Shadows - Light (subtle neon glow) */
+    --shadow-card: 0 2px 8px rgba(0, 255, 255, 0.2);
+    --shadow-card-hover: 0 4px 12px rgba(0, 255, 255, 0.3);
 
     /* Specific Elements */
-    --ticker-bg: var(--dark);
-    --ticker-text: var(--light);
-    --ticker-change-positive: var(--success);
-    --ticker-change-negative: var(--danger);
+    --ticker-bg: var(--dark);       /* Dark background for ticker */
+    --ticker-text: var(--white);    /* White text for ticker */
+    --ticker-change-positive: var(--success); /* Neon Green */
+    --ticker-change-negative: var(--danger);  /* Neon Red */
 
-    --action-badge-buy-bg: rgba(42, 199, 105, 0.1);
+    /* Action Badges - Light Theme (Neon) */
+    --action-badge-buy-bg: rgba(57, 255, 20, 0.15); /* Neon Green bg */
     --action-badge-buy-text: var(--success);
-    --action-badge-strong-buy-bg: rgba(42, 199, 105, 0.2);
+    --action-badge-strong-buy-bg: rgba(57, 255, 20, 0.25);
     --action-badge-strong-buy-text: var(--success);
-    --action-badge-sell-bg: rgba(238, 108, 77, 0.1);
+    --action-badge-sell-bg: rgba(255, 29, 21, 0.15); /* Neon Red bg */
     --action-badge-sell-text: var(--danger);
-    --action-badge-strong-sell-bg: rgba(238, 108, 77, 0.2);
+    --action-badge-strong-sell-bg: rgba(255, 29, 21, 0.25);
     --action-badge-strong-sell-text: var(--danger);
-    --action-badge-none-bg: rgba(108, 117, 125, 0.1);
+    --action-badge-none-bg: rgba(136, 136, 136, 0.2); /* Gray bg */
     --action-badge-none-text: var(--gray);
 
-    --news-item-sentiment-positive-bg: rgba(42, 199, 105, 0.1);
+    /* News Item Sentiment - Light Theme (Neon) */
+    --news-item-sentiment-positive-bg: rgba(57, 255, 20, 0.15);
     --news-item-sentiment-positive-text: var(--success);
-    --news-item-sentiment-negative-bg: rgba(238, 108, 77, 0.1);
+    --news-item-sentiment-negative-bg: rgba(255, 29, 21, 0.15);
     --news-item-sentiment-negative-text: var(--danger);
-    --news-item-sentiment-neutral-bg: rgba(108, 117, 125, 0.1);
+    --news-item-sentiment-neutral-bg: rgba(136, 136, 136, 0.2);
     --news-item-sentiment-neutral-text: var(--gray);
 
-    --price-change-positive-bg: rgba(42, 199, 105, 0.2);
-    --price-change-positive-text: #1a7d4f; /* Darker green text */
-    --price-change-negative-bg: rgba(238, 108, 77, 0.2);
-    --price-change-negative-text: #b34c30; /* Darker red text */
+    /* Price Change Indicators - Light Theme (Neon) */
+    --price-change-positive-bg: rgba(57, 255, 20, 0.2);
+    --price-change-positive-text: #00A300; /* Darker Neon Green text */
+    --price-change-negative-bg: rgba(255, 29, 21, 0.2);
+    --price-change-negative-text: #D40000; /* Darker Neon Red text */
 
-    --theme-toggle-hover-bg: rgba(0, 0, 0, 0.05);
+    --theme-toggle-hover-bg: rgba(0, 255, 255, 0.15); /* Neon Blue hover for toggle */
 }
 
-/* --- Enhanced Dark Theme Variables --- */
+/* --- Enhanced Dark Theme Variables - Neon Red/Black --- */
 [data-theme="dark"] {
-    /* Base Colors - Dark */
-    --primary: #4299e1;          /* Brighter Blue for dark bg */
-    --secondary: #63b3ed;        /* Lighter Blue */
-    --accent: #4fd1c5;           /* Brighter Teal */
-    --success: #48bb78;           /* Slightly softer Green */
-    --danger: #f56565;            /* Brighter Red */
-    --warning: #ffd166;           /* Brighter Yellow */
-    --light: #4a5568;            /* Medium Gray (Dark mode "light") */
-    --dark: #1a202c;             /* Very Dark Blue/Gray */
-    --gray: #a0aec0;             /* Light Gray (Dark mode "gray") */
-    --white: #171923;            /* Almost Black (Dark mode "white") */
+    /* Base Colors - Dark Neon */
+    --primary: #FF0000;          /* Bright Neon Red */
+    --secondary: #FF4500;        /* Lighter Neon Red/Orange */
+    --accent: #FFFF00;           /* Neon Yellow */
+    --success: #00FF00;           /* Neon Green */
+    --danger: #FF69B4;            /* Neon Pink (distinct from primary red) */
+    --warning: #FFA500;           /* Neon Orange */
+    --light: #333333;            /* Dark Gray (Dark mode "light") */
+    --dark: #000000;             /* Black */
+    --gray: #A0A0A0;             /* Light Gray (Dark mode "gray") */
+    --white: #1A1A1A;            /* Very Dark Gray (Dark mode "white" for card bgs) */
 
-    /* UI Elements - Dark */
-    --bg-body: #1a202c;          /* Darkest Background */
-    --bg-card: #2d3748;          /* Dark Gray Card */
-    --bg-header: #2d3748;         /* Dark Gray Header */
-    --bg-hover: rgba(255, 255, 255, 0.08); /* More visible light hover */
+    /* UI Elements - Dark Neon */
+    --bg-body: var(--dark);          /* Black Background */
+    --bg-card: var(--white);         /* Very Dark Gray Card */
+    --bg-header: var(--white);        /* Very Dark Gray Header */
+    --bg-hover: rgba(255, 0, 0, 0.15); /* Neon Red hover */
 
-    /* Text - Dark */
-    --text-main: #f7fafc;        /* Very Light Gray Text (improved contrast) */
-    --text-muted: #cbd5e0;       /* Lighter Gray Muted Text (improved contrast) */
-    --text-heading: #ebf8ff;     /* Light Blue Headings (improved contrast) */
-    --text-on-primary: #ffffff;  /* White text on primary */
-    --text-on-dark: #f7fafc;     /* Very light gray text on dark bg */
-    --text-link: var(--accent);  /* Teal links */
-    --text-link-hover: #81e6d9;  /* Lighter teal hover */
+    /* Text - Dark Neon */
+    --text-main: #F5F5F5;        /* Very Light Gray/White Text */
+    --text-muted: var(--gray);
+    --text-heading: var(--primary);   /* Neon Red Headings */
+    --text-on-primary: #FFFFFF;  /* White text on neon red */
+    --text-on-dark: #F5F5F5;     /* Light text on black backgrounds */
+    --text-link: var(--accent);  /* Neon Yellow links */
+    --text-link-hover: #FFFACD;  /* Lighter Neon Yellow hover */
 
-    /* Borders - Dark */
-    --border-color: #4a5568;     /* Medium Gray Border */
-    --border-card: rgba(255, 255, 255, 0.1); /* Slightly more visible borders */
-    --border-header: rgba(255, 255, 255, 0.08); /* Slightly more visible header borders */
+    /* Borders - Dark Neon */
+    --border-color: #444444;     /* Dark Gray Border */
+    --border-card: rgba(255, 0, 0, 0.4); /* Neon Red border */
+    --border-header: rgba(255, 0, 0, 0.3); /* Lighter Neon Red border */
 
-    /* Shadows - Dark (Subtler) */
-    --shadow-card: 0 4px 12px rgba(0,0,0,0.25);
-    --shadow-card-hover: 0 8px 16px rgba(0,0,0,0.35);
+    /* Shadows - Dark Neon (subtle neon glow) */
+    --shadow-card: 0 2px 10px rgba(255, 0, 0, 0.3);
+    --shadow-card-hover: 0 5px 15px rgba(255, 0, 0, 0.4);
 
-    /* Specific Elements - Dark */
-    --ticker-bg: #171923;         /* Use darkest color for ticker */
-    --ticker-text: #f7fafc;      /* Brighter ticker text for contrast */
-    --ticker-change-positive: #68d391; /* Brighter green for better visibility */
-    --ticker-change-negative: #fc8181; /* Brighter red for better visibility */
+    /* Specific Elements - Dark Neon */
+    --ticker-bg: #101010;         /* Very dark gray for ticker */
+    --ticker-text: var(--text-main);      /* Light ticker text */
+    --ticker-change-positive: var(--success); /* Neon Green */
+    --ticker-change-negative: var(--danger);  /* Neon Pink for negative changes */
 
-    --action-badge-buy-bg: rgba(72, 187, 120, 0.2);
-    --action-badge-buy-text: #9ae6b4; /* Lighter green text for contrast */
-    --action-badge-strong-buy-bg: rgba(72, 187, 120, 0.3);
-    --action-badge-strong-buy-text: #9ae6b4; /* Lighter green text for contrast */
-    --action-badge-sell-bg: rgba(245, 101, 101, 0.2);
-    --action-badge-sell-text: #feb2b2; /* Lighter red text for contrast */
-    --action-badge-strong-sell-bg: rgba(245, 101, 101, 0.3);
-    --action-badge-strong-sell-text: #feb2b2; /* Lighter red text for contrast */
-    --action-badge-none-bg: rgba(160, 174, 192, 0.2);
-    --action-badge-none-text: #edf2f7; /* Lighter text for contrast */
+    /* Action Badges - Dark Theme (Neon) */
+    --action-badge-buy-bg: rgba(0, 255, 0, 0.2); /* Neon Green bg */
+    --action-badge-buy-text: var(--success);
+    --action-badge-strong-buy-bg: rgba(0, 255, 0, 0.3);
+    --action-badge-strong-buy-text: var(--success);
+    --action-badge-sell-bg: rgba(255, 105, 180, 0.2); /* Neon Pink bg */
+    --action-badge-sell-text: var(--danger);
+    --action-badge-strong-sell-bg: rgba(255, 105, 180, 0.3);
+    --action-badge-strong-sell-text: var(--danger);
+    --action-badge-none-bg: rgba(160, 160, 160, 0.25); /* Gray bg */
+    --action-badge-none-text: var(--gray);
 
-    --news-item-sentiment-positive-bg: rgba(72, 187, 120, 0.2);
-    --news-item-sentiment-positive-text: #9ae6b4; /* Lighter green text */
-    --news-item-sentiment-negative-bg: rgba(245, 101, 101, 0.2);
-    --news-item-sentiment-negative-text: #feb2b2; /* Lighter red text */
-    --news-item-sentiment-neutral-bg: rgba(160, 174, 192, 0.2);
-    --news-item-sentiment-neutral-text: #edf2f7; /* Lighter text */
+    /* News Item Sentiment - Dark Theme (Neon) */
+    --news-item-sentiment-positive-bg: rgba(0, 255, 0, 0.2);
+    --news-item-sentiment-positive-text: var(--success);
+    --news-item-sentiment-negative-bg: rgba(255, 105, 180, 0.2);
+    --news-item-sentiment-negative-text: var(--danger);
+    --news-item-sentiment-neutral-bg: rgba(160, 160, 160, 0.25);
+    --news-item-sentiment-neutral-text: var(--gray);
 
-    --price-change-positive-bg: rgba(72, 187, 120, 0.25);
-    --price-change-positive-text: #9ae6b4; /* Lighter green text */
-    --price-change-negative-bg: rgba(245, 101, 101, 0.25);
-    --price-change-negative-text: #feb2b2; /* Lighter red text */
+    /* Price Change Indicators - Dark Theme (Neon) */
+    --price-change-positive-bg: rgba(0, 255, 0, 0.25);
+    --price-change-positive-text: #00CC00; /* Slightly Darker Neon Green */
+    --price-change-negative-bg: rgba(255, 105, 180, 0.25);
+    --price-change-negative-text: #FF4895; /* Slightly Darker Neon Pink */
 
-    --theme-toggle-hover-bg: rgba(255, 255, 255, 0.15);
+    --theme-toggle-hover-bg: rgba(255, 0, 0, 0.2); /* Neon Red hover for toggle */
 }
 
 /* Theme Toggle Button */
@@ -163,22 +169,26 @@
     transition: color 0.3s ease;
 }
 
-/* Set icon colors directly */
+/* Set icon colors directly - Neon Theme */
 .theme-light-icon {
-    color: var(--warning); /* Yellow sun */
+    color: var(--warning); /* Neon Yellow sun */
 }
 
 .theme-dark-icon {
-    color: #a0aec0; /* Gray moon */
+    color: #A0A0A0; /* Gray moon for light theme toggle */
 }
 
+[data-theme="dark"] .theme-light-icon {
+    /* Sun icon in dark mode, could be a light color or accent */
+    color: var(--accent); /* Neon Yellow sun in dark mode */
+}
 [data-theme="dark"] .theme-dark-icon {
-    color: #e2e8f0; /* Lighter moon in dark mode */
+    color: var(--secondary); /* Neon Orange/Red moon in dark mode */
 }
 
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Consider 'Orbitron' or 'Turret Road' for more neon feel */
     background-color: var(--bg-body); /* Use body background variable */
     color: var(--text-main);
     display: flex;
@@ -187,89 +197,103 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Navbar */
+/* Navbar - Neon Adjustments */
 .navbar {
-    background-color: var(--primary);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    background-color: var(--primary); /* Neon Blue/Red */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2); /* Slightly stronger shadow */
 }
 .navbar-brand {
     font-weight: 700;
-    color: var(--text-on-primary) !important; /* Use variable */
+    color: var(--text-on-primary) !important; /* Dark text on light neon, light on dark neon */
+    text-shadow: 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); /* Subtle accent glow */
 }
 .navbar-brand span {
-    color: var(--accent);
+    color: var(--accent); /* Neon Accent */
 }
 .nav-link {
-    color: rgba(255, 255, 255, 0.8) !important; /* Keep light text on dark navbar */
-    transition: color 0.2s ease-in-out;
+    /* For light theme: dark text. For dark theme: light text. */
+    color: color-mix(in srgb, var(--text-on-primary) 80%, transparent) !important;
+    transition: color 0.2s ease-in-out, text-shadow 0.2s ease-in-out;
 }
 .nav-link:hover, .nav-link.active {
-    color: var(--text-on-primary) !important; /* Use variable */
+    color: var(--text-on-primary) !important;
+    text-shadow: 0 0 5px var(--accent); /* Stronger accent glow on hover */
 }
 .nav-link i {
     margin-right: 5px;
 }
 .navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: color-mix(in srgb, var(--text-on-primary) 50%, transparent);
 }
-.navbar-toggler-icon {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+/* Adjust toggler icon based on text-on-primary for better contrast */
+[data-theme="light"] .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(26, 26, 26, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
-/* Ensure dropdown menu adapts */
+[data-theme="dark"] .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(245, 245, 245, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Ensure dropdown menu adapts - Neon */
 .dropdown-menu {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-card);
-    box-shadow: var(--shadow-card);
+    background-color: var(--bg-card); /* White/Very Dark Gray */
+    border: 1px solid var(--border-card); /* Neon Accent Border */
+    box-shadow: var(--shadow-card); /* Neon Shadow */
+    border-radius: 8px; /* Slightly less rounded for a sharper neon look */
 }
 .dropdown-item {
     color: var(--text-main);
+    transition: background-color 0.2s, color 0.2s, text-shadow 0.2s;
 }
 .dropdown-item:hover, .dropdown-item:focus {
-    background-color: var(--bg-hover);
-    color: var(--text-main);
+    background-color: var(--bg-hover); /* Neon Accent Hover */
+    color: var(--text-link-hover); /* Use link hover color */
+    text-shadow: 0 0 3px var(--accent);
 }
 .dropdown-divider {
-    border-top-color: var(--border-color);
+    border-top-color: var(--border-card); /* Neon Accent Border */
 }
 /* Dark mode specific dropdown adjustments */
 [data-theme="dark"] .dropdown-menu {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4); /* Darker shadow */
+    box-shadow: var(--shadow-card); /* Ensure dark neon shadow applies */
 }
 [data-theme="dark"] .dropdown-item:hover,
 [data-theme="dark"] .dropdown-item:focus {
-    background-color: rgba(255, 255, 255, 0.08); /* Slightly lighter hover */
+    background-color: var(--bg-hover); /* Ensure dark neon hover applies */
+    color: var(--text-link-hover);
 }
 
-/* Cards */
+/* Cards - Neon Adjustments */
 .card {
-    border: 1px solid var(--border-card); /* Use variable */
+    border: 1px solid var(--border-card); /* Neon Border */
     border-radius: 10px;
-    box-shadow: var(--shadow-card); /* Use variable */
+    box-shadow: var(--shadow-card); /* Neon Shadow */
     margin-bottom: 24px;
     transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s, border-color 0.3s;
-    background-color: var(--bg-card); /* Use variable */
+    background-color: var(--bg-card); /* White/Very Dark Gray */
     display: flex;
     flex-direction: column;
-    color: var(--text-main); /* Ensure text inside card adapts */
+    color: var(--text-main); /* Dark/Light text */
 }
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-card-hover); /* Use variable */
+    transform: translateY(-5px) scale(1.01); /* Slight scale for neon pop */
+    box-shadow: var(--shadow-card-hover); /* Neon Shadow Hover */
 }
 .card-header {
     font-weight: 600;
-    background-color: var(--bg-header); /* Use variable */
-    border-bottom: 1px solid var(--border-header); /* Use variable */
+    background-color: var(--bg-header); /* White/Very Dark Gray */
+    border-bottom: 1px solid var(--border-header); /* Neon Accent Border */
     padding: 16px 20px;
     border-radius: 10px 10px 0 0 !important;
     display: flex;
     align-items: center;
-    color: var(--text-heading); /* Use variable */
-    transition: background-color 0.3s, border-color 0.3s;
+    color: var(--text-heading); /* Neon Primary */
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s, text-shadow 0.3s;
+    text-shadow: 0 0 2px color-mix(in srgb, var(--text-heading) 30%, transparent);
 }
 .card-header i {
     margin-right: 10px;
-    color: var(--secondary);
+    color: var(--secondary); /* Neon Secondary */
+    filter: drop-shadow(0 0 2px var(--secondary)); /* Icon glow */
 }
 .card-body {
     padding: 20px;
@@ -281,65 +305,76 @@ body {
     padding: 0 !important;
 }
 
-/* Buttons */
+/* Buttons - Neon Adjustments */
 .btn {
      border-radius: 8px;
      padding: 8px 16px;
-     font-weight: 500;
+     font-weight: 600; /* Bolder for neon */
      transition: all 0.2s ease-in-out;
+     text-transform: uppercase; /* Optional: for a more distinct style */
+     letter-spacing: 0.5px; /* Optional */
+     border-width: 1px; /* Ensure border is visible for outline buttons */
 }
 .btn-lg { padding: 12px 24px; font-size: 1.1rem;}
 .btn-sm { padding: 5px 10px; font-size: 0.8rem;}
 
-/* Define button text colors explicitly */
-.btn-primary { background-color: var(--primary); border-color: var(--primary); color: var(--text-on-primary); }
-.btn-primary:hover { background-color: color-mix(in srgb, var(--primary) 80%, black); border-color: color-mix(in srgb, var(--primary) 80%, black); color: var(--text-on-primary); }
+/* Neon Button Text Colors & Shadows */
+.btn-primary { background-color: var(--primary); border-color: var(--primary); color: var(--text-on-primary); text-shadow: 0 0 3px rgba(0,0,0,0.3); }
+.btn-primary:hover { background-color: color-mix(in srgb, var(--primary) 90%, var(--white) 10%); border-color: color-mix(in srgb, var(--primary) 90%, var(--white) 10%); color: var(--text-on-primary); box-shadow: 0 0 10px var(--primary); }
 .btn-outline-primary { color: var(--primary); border-color: var(--primary); }
-.btn-outline-primary:hover { background-color: var(--primary); color: var(--text-on-primary); }
+.btn-outline-primary:hover { background-color: var(--primary); color: var(--text-on-primary); box-shadow: 0 0 8px var(--primary); }
 
-.btn-success { background-color: var(--success); border-color: var(--success); color: #fff; }
-.btn-success:hover { background-color: color-mix(in srgb, var(--success) 85%, black); border-color: color-mix(in srgb, var(--success) 85%, black); color: #fff; }
+.btn-success { background-color: var(--success); border-color: var(--success); color: var(--dark); text-shadow: 0 0 3px rgba(0,0,0,0.2); } /* Dark text on neon green */
+.btn-success:hover { background-color: color-mix(in srgb, var(--success) 90%, var(--white) 10%); border-color: color-mix(in srgb, var(--success) 90%, var(--white) 10%); color: var(--dark); box-shadow: 0 0 10px var(--success); }
 .btn-outline-success { color: var(--success); border-color: var(--success); }
-.btn-outline-success:hover { background-color: var(--success); color: #fff; }
+.btn-outline-success:hover { background-color: var(--success); color: var(--dark); box-shadow: 0 0 8px var(--success); }
 
-.btn-danger { background-color: var(--danger); border-color: var(--danger); color: #fff; }
-.btn-danger:hover { background-color: color-mix(in srgb, var(--danger) 85%, black); border-color: color-mix(in srgb, var(--danger) 85%, black); color: #fff; }
+.btn-danger { background-color: var(--danger); border-color: var(--danger); color: var(--white); text-shadow: 0 0 3px rgba(0,0,0,0.2); } /* White text on neon red/pink */
+.btn-danger:hover { background-color: color-mix(in srgb, var(--danger) 90%, var(--white) 10%); border-color: color-mix(in srgb, var(--danger) 90%, var(--white) 10%); color: var(--white); box-shadow: 0 0 10px var(--danger); }
 .btn-outline-danger { color: var(--danger); border-color: var(--danger); }
-.btn-outline-danger:hover { background-color: var(--danger); color: #fff; }
+.btn-outline-danger:hover { background-color: var(--danger); color: var(--white); box-shadow: 0 0 8px var(--danger); }
 
-.btn-info { background-color: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-info:hover { background-color: color-mix(in srgb, var(--accent) 85%, black); border-color: color-mix(in srgb, var(--accent) 85%, black); color: #fff; }
+.btn-info { background-color: var(--accent); border-color: var(--accent); color: var(--dark); text-shadow: 0 0 3px rgba(0,0,0,0.2); } /* Dark text on neon pink/yellow */
+.btn-info:hover { background-color: color-mix(in srgb, var(--accent) 90%, var(--white) 10%); border-color: color-mix(in srgb, var(--accent) 90%, var(--white) 10%); color: var(--dark); box-shadow: 0 0 10px var(--accent); }
 .btn-outline-info { color: var(--accent); border-color: var(--accent); }
-.btn-outline-info:hover { background-color: var(--accent); color: #fff; }
+.btn-outline-info:hover { background-color: var(--accent); color: var(--dark); box-shadow: 0 0 8px var(--accent); }
 
-/* Warning button text color needs careful handling based on theme */
-.btn-warning { background-color: var(--warning); border-color: var(--warning); color: #444; } /* Darker text for light theme */
-.btn-warning:hover { background-color: color-mix(in srgb, var(--warning) 85%, black); border-color: color-mix(in srgb, var(--warning) 85%, black); color: #444; }
+/* Warning button text color */
+.btn-warning { background-color: var(--warning); border-color: var(--warning); color: var(--dark); text-shadow: 0 0 3px rgba(0,0,0,0.2); }
+.btn-warning:hover { background-color: color-mix(in srgb, var(--warning) 90%, var(--white) 10%); border-color: color-mix(in srgb, var(--warning) 90%, var(--white) 10%); color: var(--dark); box-shadow: 0 0 10px var(--warning); }
 .btn-outline-warning { color: var(--warning); border-color: var(--warning); }
-.btn-outline-warning:hover { background-color: var(--warning); color: #444; }
+.btn-outline-warning:hover { background-color: var(--warning); color: var(--dark); box-shadow: 0 0 8px var(--warning); }
 
-[data-theme="dark"] .btn-warning { color: #1a202c; } /* Dark text for dark theme */
-[data-theme="dark"] .btn-warning:hover { color: #1a202c; }
-[data-theme="dark"] .btn-outline-warning:hover { color: #1a202c; }
+[data-theme="dark"] .btn-success { color: var(--dark); } /* Ensure dark text on neon green in dark mode too */
+[data-theme="dark"] .btn-success:hover { color: var(--dark); }
+[data-theme="dark"] .btn-outline-success:hover { color: var(--dark); }
+[data-theme="dark"] .btn-info { color: var(--dark); } /* Ensure dark text on neon yellow in dark mode */
+[data-theme="dark"] .btn-info:hover { color: var(--dark); }
+[data-theme="dark"] .btn-outline-info:hover { color: var(--dark); }
+[data-theme="dark"] .btn-warning { color: var(--dark); } /* Dark text on neon orange in dark mode */
+[data-theme="dark"] .btn-warning:hover { color: var(--dark); }
+[data-theme="dark"] .btn-outline-warning:hover { color: var(--dark); }
 
-.btn-dark { background-color: var(--dark); border-color: var(--dark); color: var(--text-on-dark); }
-.btn-dark:hover { background-color: color-mix(in srgb, var(--dark) 85%, black); border-color: color-mix(in srgb, var(--dark) 85%, black); color: var(--text-on-dark); }
 
-.btn-light { background-color: var(--light); border-color: var(--border-color); color: var(--text-main); }
-.btn-light:hover { background-color: color-mix(in srgb, var(--light) 90%, black); border-color: color-mix(in srgb, var(--border-color) 90%, black); }
-.btn-outline-light { color: var(--light); border-color: var(--light); } /* Less common */
+.btn-dark { background-color: var(--dark); border-color: var(--dark); color: var(--text-on-dark); } /* Black button, light text */
+.btn-dark:hover { background-color: color-mix(in srgb, var(--dark) 85%, #555 15%); border-color: color-mix(in srgb, var(--dark) 85%, #555 15%); color: var(--text-on-dark); box-shadow: 0 0 8px var(--gray); }
+
+.btn-light { background-color: var(--light); border-color: var(--border-color); color: var(--text-main); } /* White/Light Gray button, dark text */
+.btn-light:hover { background-color: color-mix(in srgb, var(--light) 90%, black); border-color: color-mix(in srgb, var(--border-color) 90%, black); box-shadow: 0 0 8px var(--gray); }
+.btn-outline-light { color: var(--light); border-color: var(--light); }
 .btn-outline-light:hover { background-color: var(--light); color: var(--primary); }
 
-.btn-link { color: var(--text-link); text-decoration: none; font-weight: 500;}
-.btn-link:hover { color: var(--text-link-hover); text-decoration: underline;}
+
+.btn-link { color: var(--text-link); text-decoration: none; font-weight: 600; text-transform: none; }
+.btn-link:hover { color: var(--text-link-hover); text-decoration: underline; text-shadow: 0 0 3px var(--text-link-hover); }
 
 
-/* Forms */
+/* Forms - Neon Adjustments */
 .form-control {
     padding: 10px 15px;
     border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-card); /* Use card bg for inputs */
+    border: 1px solid var(--border-color); /* Neon Accent Border */
+    background-color: var(--bg-card); /* White/Very Dark Gray */
     color: var(--text-main);
     transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s, color 0.3s;
 }
@@ -348,29 +383,30 @@ body {
     opacity: 0.7;
 }
 .form-control:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--primary) 25%, transparent); /* Adjusted focus ring */
-    background-color: var(--bg-card); /* Keep bg on focus */
-    color: var(--text-main); /* Keep text color on focus */
+    border-color: var(--primary); /* Neon Primary Border */
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 30%, transparent), 0 0 8px color-mix(in srgb, var(--primary) 50%, transparent); /* Neon Glow Focus Ring */
+    background-color: var(--bg-card);
+    color: var(--text-main);
 }
-.form-label { font-weight: 500; margin-bottom: 5px; color: var(--text-muted);}
+.form-label { font-weight: 500; margin-bottom: 5px; color: var(--text-muted); text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px;}
 .input-group-text {
-    background-color: color-mix(in srgb, var(--bg-body) 80%, var(--border-color) 20%); /* Blend bg and border */
-    border: 1px solid var(--border-color);
+    background-color: color-mix(in srgb, var(--bg-body) 80%, var(--border-color) 20%);
+    border: 1px solid var(--border-color); /* Neon Accent Border */
     color: var(--text-muted);
 }
 
-/* Improve form controls in dark mode */
+/* Improve form controls in dark mode - Neon */
 [data-theme="dark"] .form-control {
-    background-color: color-mix(in srgb, var(--bg-card) 95%, black 5%); /* Slightly darker for better distinction */
-    border-color: var(--border-color);
+    background-color: color-mix(in srgb, var(--bg-card) 95%, black 5%);
+    border-color: var(--border-card); /* Dark Neon Border */
     color: var(--text-main);
 }
 
 [data-theme="dark"] .form-control:focus {
-    background-color: color-mix(in srgb, var(--bg-card) 90%, black 10%); /* Even darker when focused */
-    border-color: var(--primary);
+    background-color: color-mix(in srgb, var(--bg-card) 90%, black 10%);
+    border-color: var(--primary); /* Dark Neon Primary Border */
     color: var(--text-main);
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 30%, transparent), 0 0 8px color-mix(in srgb, var(--primary) 50%, transparent);
 }
 
 [data-theme="dark"] .form-control::placeholder {
@@ -379,16 +415,16 @@ body {
 }
 
 [data-theme="dark"] .form-text {
-    color: #cbd5e0 !important; /* Brighter and more visible help text */
+    color: var(--text-muted) !important;
 }
 
 [data-theme="dark"] .input-group-text {
     background-color: color-mix(in srgb, var(--bg-header) 95%, var(--primary) 5%);
     color: var(--text-heading);
-    border-color: var(--border-color);
+    border-color: var(--border-card); /* Dark Neon Border */
 }
 
-/* Tables */
+/* Tables - Neon Adjustments */
 .table {
     border-collapse: separate;
     border-spacing: 0;
@@ -668,21 +704,42 @@ body {
 #toast-container .toast-body { display: flex; align-items: center; }
 #toast-container .toast-body i { margin-right: 10px; font-size: 1.2rem; }
 /* Ensure toast colors adapt */
-#toast-container .bg-success { background-color: var(--success) !important; }
-#toast-container .bg-danger { background-color: var(--danger) !important; }
-#toast-container .bg-warning { background-color: var(--warning) !important; color: #444 !important; }
-#toast-container .bg-info { background-color: var(--accent) !important; }
-[data-theme="dark"] #toast-container .bg-warning { color: #1a202c !important; }
+#toast-container .bg-success { background-color: var(--success) !important; color: var(--dark) !important; }
+#toast-container .bg-success i { color: var(--dark) !important; }
+#toast-container .bg-danger { background-color: var(--danger) !important; color: var(--white) !important; } /* Assuming white text is desired */
+#toast-container .bg-danger i { color: var(--white) !important; }
+#toast-container .bg-warning { background-color: var(--warning) !important; color: var(--dark) !important; }
+#toast-container .bg-warning i { color: var(--dark) !important; }
+#toast-container .bg-info { background-color: var(--accent) !important; color: var(--dark) !important; }
+#toast-container .bg-info i { color: var(--dark) !important; }
+
+/* Dark theme overrides for toast text if needed, but base is light text on dark bg */
+[data-theme="dark"] #toast-container .bg-success { color: var(--dark) !important; } /* Neon green is bright, dark text still better */
+[data-theme="dark"] #toast-container .bg-success i { color: var(--dark) !important; }
+[data-theme="dark"] #toast-container .bg-danger { color: var(--white) !important; } /* Neon pink is bright, white text okay */
+[data-theme="dark"] #toast-container .bg-danger i { color: var(--white) !important; }
+[data-theme="dark"] #toast-container .bg-warning { color: var(--dark) !important; } /* Neon orange, dark text */
+[data-theme="dark"] #toast-container .bg-warning i { color: var(--dark) !important; }
+[data-theme="dark"] #toast-container .bg-info { color: var(--white) !important; } /* Neon yellow accent, white text */
+[data-theme="dark"] #toast-container .bg-info i { color: var(--white) !important; }
+
+
 [data-theme="dark"] #toast-container .toast {
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    color: #fff !important; /* Ensure text is white on dark toasts */
+    color: #fff !important; /* Default white text for dark theme toasts */
     background-clip: padding-box; /* Fix potential border issues */
 }
 [data-theme="dark"] #toast-container .toast-header {
     background-color: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    color: #e2e8f0; /* Light header text */
 }
 [data-theme="dark"] #toast-container .btn-close-white { filter: invert(1) grayscale(100%) brightness(200%); }
+
+
+/* News page loading spinner */
+#loading-spinner {
+    color: var(--primary) !important;
+}
 
 /* Modal Styling */
 .modal-content {
