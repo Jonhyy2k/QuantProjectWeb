@@ -9,6 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ range(1000, 9999) | random }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/page_guides.css') }}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
@@ -56,6 +57,10 @@
             </div>
         </div>
     </nav>
+
+    <div class="page-guide-icon-container">
+        <i class="fas fa-info-circle page-guide-trigger" data-modal-id="dashboardGuideModal" title="Dashboard Guide"></i>
+    </div>
 
     <div class="main-content container mt-4">
         <div class="welcome-card">
@@ -316,21 +321,77 @@
 
     <!-- Welcome Popup Modal -->
     <div class="modal fade" id="welcomePopupModal" tabindex="-1" aria-labelledby="welcomePopupModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="welcomePopupModalLabel"><i class="fas fa-glass-cheers me-2"></i>Welcome to QuantPulse!</h5>
+                    <h5 class="modal-title" id="welcomePopupModalLabel">
+                        <i class="fas fa-rocket me-2"></i>Welcome to QuantPulse - Your AI Trading Assistant!
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="lead">Hello there, and welcome to QuantPulse!</p>
-                    <p>We're excited to have you on board. This is your main dashboard, where you can get a quick overview of your financial analyses and market data.</p>
-                    <p>Explore your analysis history, manage your watchlist, and perform quick stock analyses using the tools available. Our goal is to provide you with AI-driven insights to help you make informed decisions.</p>
-                    <p>If you have any questions, feedback, or just want to say hi, you can reach out to us at <a href="mailto:contact@quantpulse.example.com">contact@quantpulse.example.com</a>.</p>
-                    <p class="mb-0">Feel free to look around and discover all the features. For detailed guides on specific pages, look for the <i class="fas fa-info-circle"></i> icon or check out the "About Us" section again if you need a refresher on this welcome message!</p>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                                <h6 class="fw-bold">Professional Stock Analysis</h6>
+                            </div>
+                            <p class="small">QuantPulse uses advanced AI algorithms to analyze stocks, providing you with comprehensive reports including technical indicators, fundamental analysis, and market sentiment.</p>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-star fa-3x text-warning mb-3"></i>
+                                <h6 class="fw-bold">Smart Watchlist Management</h6>
+                            </div>
+                            <p class="small">Keep track of your favorite stocks with our intelligent watchlist. Get real-time price updates and quick analysis access for all your monitored securities.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-brain fa-3x text-success mb-3"></i>
+                                <h6 class="fw-bold">AI-Powered Insights</h6>
+                            </div>
+                            <p class="small">Our machine learning models analyze market trends, news sentiment, and technical patterns to provide you with actionable trading recommendations.</p>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-shield-alt fa-3x text-info mb-3"></i>
+                                <h6 class="fw-bold">Risk Assessment</h6>
+                            </div>
+                            <p class="small">Every analysis includes comprehensive risk metrics and volatility assessments to help you make informed investment decisions.</p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Quick Start Guide:</h6>
+                        <ol class="small mb-0">
+                            <li><strong>Analyze a Stock:</strong> Use the search box above to enter any stock symbol (e.g., AAPL, TSLA)</li>
+                            <li><strong>Build Your Watchlist:</strong> Add interesting stocks to track their performance</li>
+                            <li><strong>Review History:</strong> Check your analysis history to track your insights over time</li>
+                            <li><strong>Dark Mode:</strong> Toggle between light and dark themes using the sun/moon icon</li>
+                        </ol>
+                    </div>
+
+                    <div class="text-center">
+                        <p class="small text-muted mb-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Look for the <i class="fas fa-info-circle text-primary"></i> icon on each page for detailed guides and tips!
+                        </p>
+                        <p class="small text-muted">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <strong>Disclaimer:</strong> QuantPulse provides analysis for informational purposes only. Always consult with a qualified financial advisor before making investment decisions.
+                        </p>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Skip Tour
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-1"></i>Let's Get Started!
+                    </button>
                 </div>
             </div>
         </div>
@@ -356,11 +417,279 @@
         </div>
     </div>
 
+    <!-- Dashboard Guide Modal -->
+    <div class="modal fade" id="dashboardGuideModal" tabindex="-1" aria-labelledby="dashboardGuideModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dashboardGuideModalLabel">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard Guide - Master Your Trading Hub
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="accordion" id="dashboardAccordion">
+                        <!-- Quick Stock Analysis Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="analysisHeading">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#analysisCollapse">
+                                    <i class="fas fa-search me-2"></i>Quick Stock Analysis
+                                </button>
+                            </h2>
+                            <div id="analysisCollapse" class="accordion-collapse collapse show" data-bs-parent="#dashboardAccordion">
+                                <div class="accordion-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="fas fa-chart-line fa-2x text-primary me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1"><i class="fas fa-play-circle text-primary me-2"></i><strong>How to use:</strong></h6>
+                                            <p class="mb-0 small">Enter any stock symbol (e.g., AAPL, TSLA, GOOGL) in the search box and click "Analyze".</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-bolt text-warning me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Real-time Analysis</strong>
+                                                    <p class="small text-muted mb-0">Get instant AI-powered reports with technical indicators, RSI, MACD, and moving averages</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-heart-pulse text-info me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Market Sentiment</strong>
+                                                    <p class="small text-muted mb-0">News analysis and social media sentiment scoring to gauge market mood</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-shield-halved text-danger me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Risk Assessment</strong>
+                                                    <p class="small text-muted mb-0">Volatility metrics, downside protection analysis, and beta calculations</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-crystal-ball text-success me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Price Predictions</strong>
+                                                    <p class="small text-muted mb-0">AI-generated price targets with confidence intervals and timeline forecasts</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Watchlist Management Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="watchlistHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#watchlistCollapse">
+                                    <i class="fas fa-star me-2"></i>Smart Watchlist Management
+                                </button>
+                            </h2>
+                            <div id="watchlistCollapse" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+                                <div class="accordion-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="fas fa-star fa-2x text-warning me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1"><i class="fas fa-briefcase text-primary me-2"></i><strong>Manage your portfolio:</strong></h6>
+                                            <p class="mb-0 small">Track multiple stocks with real-time updates and organized monitoring.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-plus-circle text-success me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Add Stocks</strong>
+                                                    <p class="small text-muted mb-0">Use the input field in the watchlist card or click the star button from analysis results</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-clock text-info me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Real-time Prices</strong>
+                                                    <p class="small text-muted mb-0">Live price updates for all watchlist items with automatic refresh</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-mouse-pointer text-warning me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Quick Actions</strong>
+                                                    <p class="small text-muted mb-0">Analyze or remove stocks directly from the watchlist with one-click buttons</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-chart-line text-success me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Performance Tracking</strong>
+                                                    <p class="small text-muted mb-0">Monitor price changes, percentage movements, and daily performance</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis History Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="historyHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#historyCollapse">
+                                    <i class="fas fa-history me-2"></i>Analysis History & Portfolio Tracking
+                                </button>
+                            </h2>
+                            <div id="historyCollapse" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+                                <div class="accordion-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="fas fa-history fa-2x text-info me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1"><i class="fas fa-file-archive text-primary me-2"></i><strong>Track your research:</strong></h6>
+                                            <p class="mb-0 small">All your previous analyses are saved and trackable with detailed performance metrics.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-chart-bar text-success me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Historical Performance</strong>
+                                                    <p class="small text-muted mb-0">See how your analysis recommendations performed over time with detailed P/L tracking</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-hand-pointer text-info me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Action Tracking</strong>
+                                                    <p class="small text-muted mb-0">Review your buy/sell decisions and their outcomes with comprehensive analytics</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-share-alt text-warning me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Sharing</strong>
+                                                    <p class="small text-muted mb-0">Share your analysis insights with others using the share button and collaborate</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-calculator text-danger me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Portfolio Simulation</strong>
+                                                    <p class="small text-muted mb-0">Virtual P/L tracking based on analysis dates with hypothetical returns</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Market Overview Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="marketHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#marketCollapse">
+                                    <i class="fas fa-globe me-2"></i>Market Overview & Indicators
+                                </button>
+                            </h2>
+                            <div id="marketCollapse" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+                                <div class="accordion-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="fas fa-globe fa-2x text-success me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1"><i class="fas fa-info-circle text-primary me-2"></i><strong>Stay informed:</strong></h6>
+                                            <p class="mb-0 small">Key market indicators and index performance for comprehensive market understanding.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-building text-success me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Major Indices</strong>
+                                                    <p class="small text-muted mb-0">S&P 500, NASDAQ, Dow Jones real-time values with daily changes and trends</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-thermometer-half text-danger me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Market Sentiment</strong>
+                                                    <p class="small text-muted mb-0">VIX (fear index) and treasury yields to gauge market emotions and volatility</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-newspaper text-info me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Ticker Tape</strong>
+                                                    <p class="small text-muted mb-0">Scrolling real-time prices for major stocks with live updates every few seconds</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-compass text-warning me-2 mt-1"></i>
+                                                <div>
+                                                    <strong class="small">Market Context</strong>
+                                                    <p class="small text-muted mb-0">Understand overall market conditions to make informed analysis decisions</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Pro Tips:</h6>
+                        <ul class="small mb-0">
+                            <li><i class="fas fa-moon text-secondary me-2"></i>Use the <strong>dark mode toggle</strong> (sun/moon icon) for comfortable viewing in different lighting</li>
+                            <li><i class="fas fa-save text-success me-2"></i>Analysis results are <strong>automatically saved</strong> - no need to manually save your work</li>
+                            <li><i class="fas fa-sync text-primary me-2"></i>The <strong>refresh button</strong> updates all market data and prices simultaneously</li>
+                            <li><i class="fas fa-tag text-info me-2"></i>Click on any <strong>analysis action badge</strong> to see detailed reasoning behind AI recommendations</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-1"></i>Got it!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/welcome_popup.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/page_guides.js') }}"></script>
      <script>
          // Optional page-specific JS or variable passing
          // const watchlistData = {{ watchlist | tojson }};

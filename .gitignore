@@ -3,3 +3,14 @@ prediction_plots
 
 prediction_plots/*.png
 static/prediction_plots/*.png
+/venv
+/venv
+/venv
+venv/
+__pycache__/
+*.pyc
+.env
+venv/
+__pycache__/
+*.pyc
+.env

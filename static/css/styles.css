@@ -1,24 +1,24 @@
 /* static/css/styles.css */
 
-/* --- Consolidated Professional Styles --- */
+/* --- Tron Evolution Professional Styles --- */
 :root {
-    /* Light Theme (Default) - Neon Blue/White */
-    --primary: #00FFFF;         /* Bright Neon Blue */
-    --secondary: #7DFDFE;       /* Lighter Neon Blue/Cyan */
-    --accent: #FF00FF;          /* Vibrant Pink */
-    --success: #39FF14;          /* Neon Lime Green */
-    --danger: #FF1D15;           /* Neon Red (similar to dark mode primary for consistency) */
-    --warning: #FFF01F;          /* Neon Yellow */
-    --light: #E0E0E0;           /* Very Light Gray (almost white) */
-    --dark: #1A1A1A;            /* Dark Gray for text */
-    --gray: #888888;            /* Medium Gray */
+    /* Light Theme (Default) - Neon Blue with Backlight */
+    --primary: #00BFFF;         /* Bright Neon Blue */
+    --secondary: #00FFFF;       /* Neon Cyan */
+    --accent: #6495ED;          /* Electric Blue */
+    --success: #00FF7F;         /* Neon Green */
+    --danger: #FF1493;          /* Neon Pink */
+    --warning: #FFD700;         /* Neon Gold */
+    --light: #F0F8FF;           /* Alice Blue */
+    --dark: #191970;            /* Midnight Blue */
+    --gray: #4682B4;            /* Steel Blue */
     --white: #FFFFFF;
 
     /* UI Elements - Light */
-    --bg-body: var(--white);         /* White Background */
-    --bg-card: var(--white);
-    --bg-header: var(--white);
-    --bg-hover: rgba(0, 255, 255, 0.1); /* Light Neon Blue hover */
+    --bg-body: #F0F8FF;              /* Light Blue Background */
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --bg-header: rgba(255, 255, 255, 0.98);
+    --bg-hover: rgba(0, 191, 255, 0.15); /* Neon Blue hover with backlight */
 
     /* Text - Light */
     --text-main: var(--dark);       /* Dark Text for contrast */
@@ -30,120 +30,120 @@
     --text-link-hover: var(--secondary);
 
     /* Borders - Light */
-    --border-color: #C0C0C0; /* Lighter gray border */
-    --border-card: rgba(0, 255, 255, 0.3); /* Neon blue border */
-    --border-header: rgba(0, 255, 255, 0.2); /* Lighter neon blue border */
+    --border-color: rgba(0, 191, 255, 0.3); /* Neon blue border */
+    --border-card: rgba(0, 191, 255, 0.4); /* Brighter neon blue border */
+    --border-header: rgba(0, 191, 255, 0.25); /* Neon blue header border */
 
-    /* Shadows - Light (subtle neon glow) */
-    --shadow-card: 0 2px 8px rgba(0, 255, 255, 0.2);
-    --shadow-card-hover: 0 4px 12px rgba(0, 255, 255, 0.3);
+    /* Shadows - Light (neon glow) */
+    --shadow-card: 0 2px 12px rgba(0, 191, 255, 0.2), 0 0 20px rgba(0, 191, 255, 0.1);
+    --shadow-card-hover: 0 4px 20px rgba(0, 191, 255, 0.3), 0 0 30px rgba(0, 191, 255, 0.15);
 
     /* Specific Elements */
     --ticker-bg: var(--dark);       /* Dark background for ticker */
     --ticker-text: var(--white);    /* White text for ticker */
-    --ticker-change-positive: var(--success); /* Neon Green */
-    --ticker-change-negative: var(--danger);  /* Neon Red */
+    --ticker-change-positive: var(--success); /* Softer Green */
+    --ticker-change-negative: var(--danger);  /* Softer Red */
 
-    /* Action Badges - Light Theme (Neon) */
-    --action-badge-buy-bg: rgba(57, 255, 20, 0.15); /* Neon Green bg */
-    --action-badge-buy-text: var(--success);
-    --action-badge-strong-buy-bg: rgba(57, 255, 20, 0.25);
-    --action-badge-strong-buy-text: var(--success);
-    --action-badge-sell-bg: rgba(255, 29, 21, 0.15); /* Neon Red bg */
-    --action-badge-sell-text: var(--danger);
-    --action-badge-strong-sell-bg: rgba(255, 29, 21, 0.25);
-    --action-badge-strong-sell-text: var(--danger);
-    --action-badge-none-bg: rgba(136, 136, 136, 0.2); /* Gray bg */
+    /* Action Badges - Light Theme (Subtle) */
+    --action-badge-buy-bg: rgba(0, 200, 81, 0.1); /* Subtle Green bg */
+    --action-badge-buy-text: #28A745;
+    --action-badge-strong-buy-bg: rgba(0, 200, 81, 0.2);
+    --action-badge-strong-buy-text: #1E7E34;
+    --action-badge-sell-bg: rgba(255, 68, 68, 0.1); /* Subtle Red bg */
+    --action-badge-sell-text: #DC3545;
+    --action-badge-strong-sell-bg: rgba(255, 68, 68, 0.2);
+    --action-badge-strong-sell-text: #BD2130;
+    --action-badge-none-bg: rgba(108, 117, 125, 0.1); /* Gray bg */
     --action-badge-none-text: var(--gray);
 
-    /* News Item Sentiment - Light Theme (Neon) */
-    --news-item-sentiment-positive-bg: rgba(57, 255, 20, 0.15);
-    --news-item-sentiment-positive-text: var(--success);
-    --news-item-sentiment-negative-bg: rgba(255, 29, 21, 0.15);
-    --news-item-sentiment-negative-text: var(--danger);
-    --news-item-sentiment-neutral-bg: rgba(136, 136, 136, 0.2);
+    /* News Item Sentiment - Light Theme (Subtle) */
+    --news-item-sentiment-positive-bg: rgba(0, 200, 81, 0.1);
+    --news-item-sentiment-positive-text: #28A745;
+    --news-item-sentiment-negative-bg: rgba(255, 68, 68, 0.1);
+    --news-item-sentiment-negative-text: #DC3545;
+    --news-item-sentiment-neutral-bg: rgba(108, 117, 125, 0.1);
     --news-item-sentiment-neutral-text: var(--gray);
 
-    /* Price Change Indicators - Light Theme (Neon) */
-    --price-change-positive-bg: rgba(57, 255, 20, 0.2);
-    --price-change-positive-text: #00A300; /* Darker Neon Green text */
-    --price-change-negative-bg: rgba(255, 29, 21, 0.2);
-    --price-change-negative-text: #D40000; /* Darker Neon Red text */
+    /* Price Change Indicators - Light Theme (Subtle) */
+    --price-change-positive-bg: rgba(0, 200, 81, 0.1);
+    --price-change-positive-text: #28A745;
+    --price-change-negative-bg: rgba(255, 68, 68, 0.1);
+    --price-change-negative-text: #DC3545;
 
-    --theme-toggle-hover-bg: rgba(0, 255, 255, 0.15); /* Neon Blue hover for toggle */
+    --theme-toggle-hover-bg: rgba(0, 132, 255, 0.1); /* Subtle Tron Blue hover for toggle */
 }
 
-/* --- Enhanced Dark Theme Variables - Neon Red/Black --- */
+/* --- Enhanced Dark Theme Variables - Tron Red/Black --- */
 [data-theme="dark"] {
-    /* Base Colors - Dark Neon */
-    --primary: #FF0000;          /* Bright Neon Red */
-    --secondary: #FF4500;        /* Lighter Neon Red/Orange */
-    --accent: #FFFF00;           /* Neon Yellow */
-    --success: #00FF00;           /* Neon Green */
-    --danger: #FF69B4;            /* Neon Pink (distinct from primary red) */
-    --warning: #FFA500;           /* Neon Orange */
-    --light: #333333;            /* Dark Gray (Dark mode "light") */
-    --dark: #000000;             /* Black */
-    --gray: #A0A0A0;             /* Light Gray (Dark mode "gray") */
+    /* Base Colors - Dark Neon Red */
+    --primary: #FF0040;          /* Neon Red */
+    --secondary: #FF4500;        /* Neon Orange Red */
+    --accent: #FF6347;           /* Neon Tomato */
+    --success: #39FF14;          /* Neon Green */
+    --danger: #FF073A;           /* Bright Neon Red */
+    --warning: #FFFF00;          /* Neon Yellow */
+    --light: #2D2D2D;            /* Dark Gray (Dark mode "light") */
+    --dark: #0A0A0A;             /* Near Black */
+    --gray: #B0B0B0;             /* Light Gray (Dark mode "gray") */
     --white: #1A1A1A;            /* Very Dark Gray (Dark mode "white" for card bgs) */
 
     /* UI Elements - Dark Neon */
-    --bg-body: var(--dark);          /* Black Background */
-    --bg-card: var(--white);         /* Very Dark Gray Card */
-    --bg-header: var(--white);        /* Very Dark Gray Header */
-    --bg-hover: rgba(255, 0, 0, 0.15); /* Neon Red hover */
+    --bg-body: #0A0A0A;              /* Near Black Background */
+    --bg-card: rgba(26, 26, 26, 0.95);  /* Very Dark Gray Card with transparency */
+    --bg-header: rgba(26, 26, 26, 0.98); /* Very Dark Gray Header */
+    --bg-hover: rgba(255, 0, 64, 0.15);  /* Neon Red hover with glow */
 
-    /* Text - Dark Neon */
-    --text-main: #F5F5F5;        /* Very Light Gray/White Text */
+    /* Text - Dark Tron */
+    --text-main: #F8F9FA;        /* Very Light Gray/White Text */
     --text-muted: var(--gray);
-    --text-heading: var(--primary);   /* Neon Red Headings */
-    --text-on-primary: #FFFFFF;  /* White text on neon red */
-    --text-on-dark: #F5F5F5;     /* Light text on black backgrounds */
-    --text-link: var(--accent);  /* Neon Yellow links */
-    --text-link-hover: #FFFACD;  /* Lighter Neon Yellow hover */
+    --text-heading: var(--primary);   /* Tron Red Headings */
+    --text-on-primary: #FFFFFF;  /* White text on tron red */
+    --text-on-dark: #F8F9FA;     /* Light text on black backgrounds */
+    --text-link: var(--accent);  /* Orange links */
+    --text-link-hover: #FFD700;  /* Gold hover */
 
     /* Borders - Dark Neon */
-    --border-color: #444444;     /* Dark Gray Border */
-    --border-card: rgba(255, 0, 0, 0.4); /* Neon Red border */
-    --border-header: rgba(255, 0, 0, 0.3); /* Lighter Neon Red border */
+    --border-color: rgba(255, 0, 64, 0.4); /* Neon Red border */
+    --border-card: rgba(255, 0, 64, 0.5);  /* Bright neon red border */
+    --border-header: rgba(255, 0, 64, 0.3); /* Neon red header border */
 
-    /* Shadows - Dark Neon (subtle neon glow) */
-    --shadow-card: 0 2px 10px rgba(255, 0, 0, 0.3);
-    --shadow-card-hover: 0 5px 15px rgba(255, 0, 0, 0.4);
+    /* Shadows - Dark Neon (intense glow) */
+    --shadow-card: 0 2px 15px rgba(255, 0, 64, 0.3), 0 0 25px rgba(255, 0, 64, 0.15);
+    --shadow-card-hover: 0 5px 25px rgba(255, 0, 64, 0.4), 0 0 40px rgba(255, 0, 64, 0.2);
 
-    /* Specific Elements - Dark Neon */
-    --ticker-bg: #101010;         /* Very dark gray for ticker */
+    /* Specific Elements - Dark Tron */
+    --ticker-bg: #1A1D29;         /* Dark blue-gray for ticker */
     --ticker-text: var(--text-main);      /* Light ticker text */
-    --ticker-change-positive: var(--success); /* Neon Green */
-    --ticker-change-negative: var(--danger);  /* Neon Pink for negative changes */
+    --ticker-change-positive: var(--success); /* Teal Green */
+    --ticker-change-negative: var(--danger);  /* Bootstrap Red */
 
-    /* Action Badges - Dark Theme (Neon) */
-    --action-badge-buy-bg: rgba(0, 255, 0, 0.2); /* Neon Green bg */
+    /* Action Badges - Dark Theme (Subtle) */
+    --action-badge-buy-bg: rgba(32, 201, 151, 0.2); /* Teal Green bg */
     --action-badge-buy-text: var(--success);
-    --action-badge-strong-buy-bg: rgba(0, 255, 0, 0.3);
+    --action-badge-strong-buy-bg: rgba(32, 201, 151, 0.3);
     --action-badge-strong-buy-text: var(--success);
-    --action-badge-sell-bg: rgba(255, 105, 180, 0.2); /* Neon Pink bg */
+    --action-badge-sell-bg: rgba(220, 53, 69, 0.2); /* Bootstrap Red bg */
     --action-badge-sell-text: var(--danger);
-    --action-badge-strong-sell-bg: rgba(255, 105, 180, 0.3);
+    --action-badge-strong-sell-bg: rgba(220, 53, 69, 0.3);
     --action-badge-strong-sell-text: var(--danger);
-    --action-badge-none-bg: rgba(160, 160, 160, 0.25); /* Gray bg */
+    --action-badge-none-bg: rgba(173, 181, 189, 0.2); /* Gray bg */
     --action-badge-none-text: var(--gray);
 
-    /* News Item Sentiment - Dark Theme (Neon) */
-    --news-item-sentiment-positive-bg: rgba(0, 255, 0, 0.2);
+    /* News Item Sentiment - Dark Theme (Subtle) */
+    --news-item-sentiment-positive-bg: rgba(32, 201, 151, 0.2);
     --news-item-sentiment-positive-text: var(--success);
-    --news-item-sentiment-negative-bg: rgba(255, 105, 180, 0.2);
+    --news-item-sentiment-negative-bg: rgba(220, 53, 69, 0.2);
     --news-item-sentiment-negative-text: var(--danger);
-    --news-item-sentiment-neutral-bg: rgba(160, 160, 160, 0.25);
+    --news-item-sentiment-neutral-bg: rgba(173, 181, 189, 0.2);
     --news-item-sentiment-neutral-text: var(--gray);
 
-    /* Price Change Indicators - Dark Theme (Neon) */
-    --price-change-positive-bg: rgba(0, 255, 0, 0.25);
-    --price-change-positive-text: #00CC00; /* Slightly Darker Neon Green */
-    --price-change-negative-bg: rgba(255, 105, 180, 0.25);
-    --price-change-negative-text: #FF4895; /* Slightly Darker Neon Pink */
+    /* Price Change Indicators - Dark Theme (Subtle) */
+    --price-change-positive-bg: rgba(32, 201, 151, 0.2);
+    --price-change-positive-text: var(--success);
+    --price-change-negative-bg: rgba(220, 53, 69, 0.2);
+    --price-change-negative-text: var(--danger);
 
-    --theme-toggle-hover-bg: rgba(255, 0, 0, 0.2); /* Neon Red hover for toggle */
+    --theme-toggle-hover-bg: rgba(255, 107, 53, 0.1); /* Subtle Tron Red hover for toggle */
 }
 
 /* Theme Toggle Button */
@@ -169,21 +169,23 @@
     transition: color 0.3s ease;
 }
 
-/* Set icon colors directly - Neon Theme */
+/* Set icon colors directly - Tron Theme */
 .theme-light-icon {
-    color: var(--warning); /* Neon Yellow sun */
+    color: #FFC107; /* Warm yellow sun */
 }
 
 .theme-dark-icon {
-    color: #A0A0A0; /* Gray moon for light theme toggle */
+    color: #6C757D; /* Gray moon for light theme toggle */
 }
 
 [data-theme="dark"] .theme-light-icon {
-    /* Sun icon in dark mode, could be a light color or accent */
-    color: var(--accent); /* Neon Yellow sun in dark mode */
+    /* Sun icon in dark mode */
+    color: #FFFFFF; /* White sun for visibility in dark mode */
+    text-shadow: none; /* No afterglow */
 }
 [data-theme="dark"] .theme-dark-icon {
-    color: var(--secondary); /* Neon Orange/Red moon in dark mode */
+    color: #FFFFFF; /* White moon for visibility in dark mode */
+    text-shadow: none; /* No afterglow */
 }
 
 
@@ -200,12 +202,12 @@ body {
 /* Navbar - Neon Adjustments */
 .navbar {
     background-color: var(--primary); /* Neon Blue/Red */
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2); /* Slightly stronger shadow */
+    box-shadow: 0 2px 15px rgba(0,0,0,0.3), 0 0 20px var(--primary); /* Neon glow */
 }
 .navbar-brand {
     font-weight: 700;
     color: var(--text-on-primary) !important; /* Dark text on light neon, light on dark neon */
-    text-shadow: 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); /* Subtle accent glow */
+    text-shadow: 0 0 2px var(--accent); /* Reduced neon glow */
 }
 .navbar-brand span {
     color: var(--accent); /* Neon Accent */
@@ -217,7 +219,7 @@ body {
 }
 .nav-link:hover, .nav-link.active {
     color: var(--text-on-primary) !important;
-    text-shadow: 0 0 5px var(--accent); /* Stronger accent glow on hover */
+    text-shadow: 0 0 1px var(--accent); /* Reduced glow */ /* Reduced neon glow on hover */
 }
 .nav-link i {
     margin-right: 5px;
@@ -247,7 +249,7 @@ body {
 .dropdown-item:hover, .dropdown-item:focus {
     background-color: var(--bg-hover); /* Neon Accent Hover */
     color: var(--text-link-hover); /* Use link hover color */
-    text-shadow: 0 0 3px var(--accent);
+    text-shadow: 0 0 1px var(--accent); /* Reduced glow */
 }
 .dropdown-divider {
     border-top-color: var(--border-card); /* Neon Accent Border */
@@ -288,12 +290,12 @@ body {
     align-items: center;
     color: var(--text-heading); /* Neon Primary */
     transition: background-color 0.3s, border-color 0.3s, color 0.3s, text-shadow 0.3s;
-    text-shadow: 0 0 2px color-mix(in srgb, var(--text-heading) 30%, transparent);
+    text-shadow: 0 0 2px var(--text-heading); /* Reduced glow */
 }
 .card-header i {
     margin-right: 10px;
     color: var(--secondary); /* Neon Secondary */
-    filter: drop-shadow(0 0 2px var(--secondary)); /* Icon glow */
+    filter: drop-shadow(0 0 2px var(--secondary)); /* Reduced icon glow */
 }
 .card-body {
     padding: 20px;
@@ -320,7 +322,7 @@ body {
 
 /* Neon Button Text Colors & Shadows */
 .btn-primary { background-color: var(--primary); border-color: var(--primary); color: var(--text-on-primary); text-shadow: 0 0 3px rgba(0,0,0,0.3); }
-.btn-primary:hover { background-color: color-mix(in srgb, var(--primary) 90%, var(--white) 10%); border-color: color-mix(in srgb, var(--primary) 90%, var(--white) 10%); color: var(--text-on-primary); box-shadow: 0 0 10px var(--primary); }
+.btn-primary:hover { background-color: color-mix(in srgb, var(--primary) 90%, var(--white) 10%); border-color: color-mix(in srgb, var(--primary) 90%, var(--white) 10%); color: var(--text-on-primary); box-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary); }
 .btn-outline-primary { color: var(--primary); border-color: var(--primary); }
 .btn-outline-primary:hover { background-color: var(--primary); color: var(--text-on-primary); box-shadow: 0 0 8px var(--primary); }
 
@@ -384,7 +386,7 @@ body {
 }
 .form-control:focus {
     border-color: var(--primary); /* Neon Primary Border */
-    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 30%, transparent), 0 0 8px color-mix(in srgb, var(--primary) 50%, transparent); /* Neon Glow Focus Ring */
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 30%, transparent), 0 0 15px var(--primary), 0 0 30px var(--primary); /* Intense neon glow focus ring */
     background-color: var(--bg-card);
     color: var(--text-main);
 }
@@ -406,7 +408,7 @@ body {
     background-color: color-mix(in srgb, var(--bg-card) 90%, black 10%);
     border-color: var(--primary); /* Dark Neon Primary Border */
     color: var(--text-main);
-    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 30%, transparent), 0 0 8px color-mix(in srgb, var(--primary) 50%, transparent);
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 30%, transparent), 0 0 15px var(--primary), 0 0 30px var(--primary);
 }
 
 [data-theme="dark"] .form-control::placeholder {
@@ -747,21 +749,118 @@ body {
     border: 1px solid var(--border-card);
     background-color: var(--bg-card);
     color: var(--text-main);
+    box-shadow: var(--shadow-card);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 .modal-header {
     background-color: var(--bg-header);
     border-bottom: 1px solid var(--border-header);
     border-radius: 10px 10px 0 0;
     color: var(--text-heading);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
-.modal-title { color: var(--text-heading); font-weight: 600; }
-.modal-body { padding: 20px; }
+.modal-title { 
+    color: var(--text-heading); 
+    font-weight: 600; 
+    transition: color 0.3s ease;
+}
+.modal-body { 
+    padding: 20px; 
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
 .modal-footer {
     background-color: var(--bg-header);
     border-top: 1px solid var(--border-header);
+    border-radius: 0 0 10px 10px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 .btn-close { filter: invert(0.5) sepia(1) saturate(20) hue-rotate(190deg) brightness(1.2); }
 [data-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+
+/* Specific modal content styling for dark theme */
+[data-theme="dark"] .modal-content {
+    background-color: var(--bg-card);
+    border-color: var(--border-card);
+    color: var(--text-main);
+    box-shadow: var(--shadow-card);
+}
+
+[data-theme="dark"] .modal-header {
+    background-color: color-mix(in srgb, var(--bg-header) 90%, var(--primary) 10%);
+    border-bottom-color: var(--border-header);
+    color: var(--text-heading);
+}
+
+[data-theme="dark"] .modal-body {
+    background-color: var(--bg-card);
+    color: var(--text-main);
+}
+
+[data-theme="dark"] .modal-footer {
+    background-color: color-mix(in srgb, var(--bg-header) 90%, var(--primary) 10%);
+    border-top-color: var(--border-header);
+}
+
+/* Ensure text elements in modals adapt to theme */
+[data-theme="dark"] .modal .text-muted {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .modal .alert-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
+    color: var(--text-main);
+}
+
+/* News Page Button Group Styling */
+.btn-group-news-toggle .btn {
+    transition: all 0.3s ease;
+}
+
+/* Fix button colors in dark mode for news toggle buttons */
+[data-theme="dark"] .btn-group-news-toggle .btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+    background-color: transparent;
+}
+
+[data-theme="dark"] .btn-group-news-toggle .btn-outline-primary:hover {
+    color: var(--text-on-primary);
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+[data-theme="dark"] .btn-group-news-toggle .btn-outline-primary.active {
+    color: var(--text-on-primary);
+    background-color: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+/* Ensure proper contrast for active state in both themes */
+.btn-group-news-toggle .btn-outline-primary.active {
+    color: var(--text-on-primary);
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Override Bootstrap's default blue in dark mode */
+[data-theme="dark"] .btn-outline-primary {
+    --bs-btn-color: var(--primary);
+    --bs-btn-border-color: var(--primary);
+    --bs-btn-hover-color: var(--text-on-primary);
+    --bs-btn-hover-bg: var(--primary);
+    --bs-btn-hover-border-color: var(--primary);
+    --bs-btn-focus-shadow-rgb: var(--primary);
+    --bs-btn-active-color: var(--text-on-primary);
+    --bs-btn-active-bg: var(--primary);
+    --bs-btn-active-border-color: var(--primary);
+    --bs-btn-disabled-color: var(--primary);
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: var(--primary);
+}
 
 /* ----- Explicit Dark Theme Overrides (To help ensure application) ----- */
 [data-theme="dark"] .card {

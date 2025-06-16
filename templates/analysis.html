@@ -8,7 +8,7 @@
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ range(1000, 9999) | random }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/page_guides.css') }}">
 </head>
 <body>
@@ -365,6 +365,156 @@
 
      <div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1056"></div>
 
+    <!-- Analysis Guide Modal -->
+    <div class="modal fade" id="analysisGuideModal" tabindex="-1" aria-labelledby="analysisGuideModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="analysisGuideModalLabel">
+                        <i class="fas fa-microscope me-2"></i>Stock Analysis Guide - Deep Dive Intelligence
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-hand-pointer me-2"></i>Investment Actions
+                                </div>
+                                <div class="card-body">
+                                    <p class="small"><i class="fas fa-bullseye text-primary me-2"></i><strong>Set your investment thesis:</strong> Track your decisions and see how they perform over time.</p>
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-rocket text-success me-2"></i>
+                                                <div>
+                                                    <strong>Strong Buy</strong>
+                                                    <br><small class="text-muted">High conviction (1.5x weight)</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-arrow-up text-primary me-2"></i>
+                                                <div>
+                                                    <strong>Buy</strong>
+                                                    <br><small class="text-muted">Standard position (1x weight)</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-arrow-down text-danger me-2"></i>
+                                                <div>
+                                                    <strong>Sell</strong>
+                                                    <br><small class="text-muted">Bearish outlook (1x short)</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-anchor text-dark me-2"></i>
+                                                <div>
+                                                    <strong>Strong Sell</strong>
+                                                    <br><small class="text-muted">High conviction short (1.5x)</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-chart-line me-2"></i>Price Predictions
+                                </div>
+                                <div class="card-body">
+                                    <p class="small"><i class="fas fa-robot text-primary me-2"></i><strong>AI-generated targets:</strong> Based on technical analysis, fundamental metrics, and market sentiment.</p>
+                                    <ul class="small">
+                                        <li><i class="fas fa-calendar-alt text-warning me-2"></i><strong>30-Day Target:</strong> Short-term price prediction with confidence intervals</li>
+                                        <li><i class="fas fa-calendar text-info me-2"></i><strong>60-Day Target:</strong> Medium-term outlook considering earnings cycles</li>
+                                        <li><i class="fas fa-percentage text-success me-2"></i><strong>Expected Returns:</strong> Percentage gains/losses from current price</li>
+                                        <li><i class="fas fa-award text-danger me-2"></i><strong>Confidence Score:</strong> AI model certainty (higher = more reliable)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-calculator me-2"></i>Financial Metrics
+                                </div>
+                                <div class="card-body">
+                                    <p class="small"><i class="fas fa-chart-bar text-primary me-2"></i><strong>Key performance indicators:</strong> Fundamental analysis at a glance.</p>
+                                    <ul class="small">
+                                        <li><i class="fas fa-divide text-info me-2"></i><strong>P/E Ratio:</strong> Price-to-earnings valuation metric</li>
+                                        <li><i class="fas fa-trending-up text-success me-2"></i><strong>EPS Growth:</strong> Earnings per share growth trends</li>
+                                        <li><i class="fas fa-dollar-sign text-warning me-2"></i><strong>Revenue Growth:</strong> Company top-line expansion</li>
+                                        <li><i class="fas fa-balance-scale text-danger me-2"></i><strong>Debt-to-Equity:</strong> Financial leverage assessment</li>
+                                        <li><i class="fas fa-trophy text-success me-2"></i><strong>ROE/ROA:</strong> Profitability and efficiency metrics</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-newspaper me-2"></i>News & Sentiment
+                                </div>
+                                <div class="card-body">
+                                    <p class="small"><i class="fas fa-heart-pulse text-primary me-2"></i><strong>Market sentiment analysis:</strong> Real-time news impact on stock performance.</p>
+                                    <ul class="small">
+                                        <li><i class="fas fa-smile text-success me-2"></i><strong>Sentiment Score:</strong> Positive/negative news analysis</li>
+                                        <li><i class="fas fa-newspaper text-info me-2"></i><strong>Recent Headlines:</strong> Latest news affecting the stock</li>
+                                        <li><i class="fas fa-hashtag text-warning me-2"></i><strong>Social Media:</strong> Twitter/Reddit sentiment tracking</li>
+                                        <li><i class="fas fa-user-tie text-danger me-2"></i><strong>Analyst Coverage:</strong> Professional analyst recommendations</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-chart-area me-2"></i>Understanding the Analysis Charts:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="small mb-0">
+                                    <li><i class="fas fa-line-chart text-primary me-2"></i><strong>Price Chart:</strong> Historical price movements with technical indicators</li>
+                                    <li><i class="fas fa-signal text-info me-2"></i><strong>Volume Analysis:</strong> Trading volume patterns and anomalies</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="small mb-0">
+                                    <li><i class="fas fa-band-aid text-warning me-2"></i><strong>Prediction Bands:</strong> Confidence intervals for price targets</li>
+                                    <li><i class="fas fa-layer-group text-danger me-2"></i><strong>Support/Resistance:</strong> Key technical levels to watch</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Disclaimers:</h6>
+                        <ul class="small mb-0">
+                            <li><i class="fas fa-robot text-info me-2"></i>All predictions are <strong>AI-generated estimates</strong> based on historical data and market patterns</li>
+                            <li><i class="fas fa-history text-secondary me-2"></i>Past performance does not guarantee future results</li>
+                            <li><i class="fas fa-user-check text-warning me-2"></i>Consider your risk tolerance and investment objectives before making decisions</li>
+                            <li><i class="fas fa-info-circle text-primary me-2"></i>This analysis is for <strong>informational purposes only</strong> and not financial advice</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-1"></i>Ready to Analyze!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
