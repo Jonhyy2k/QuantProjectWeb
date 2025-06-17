@@ -1,5 +1,6 @@
 # local_helper.py
 # This script runs on the user's machine.
+# python -m PyInstaller --onefile --windowed local_helper.py
 
 import subprocess
 import os
